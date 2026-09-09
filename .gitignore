@@ -8,3 +8,6 @@ drizzle
 BLUEPRINT.md
 SETUP.md
 .vercel
+
+# Local Netlify folder
+.netlify
