@@ -1,0 +1,9 @@
+node_modules
+.output
+dist
+routeTree.gen.ts
+.env
+.env.local
+drizzle
+BLUEPRINT.md
+SETUP.md
