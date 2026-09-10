@@ -16,24 +16,29 @@ import { Input } from "~/components/ui/input";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { signUp } from "~/lib/auth/auth-client";
-import { toast } from 'sonner';
+import { toast } from "sonner";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Spinner } from "./ui/spinner";
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setIsLoading(true);
     setError(null);
     const { error } = await signUp.email({ email, password, name });
     if (error) {
       setError(error?.message ?? "Register failed");
-      return; 
+      setIsLoading(false);
+      return;
     }
-    // navigate({ to: "/" });
-    toast.success("Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.");
+    // navigate({ to: "/email/verify-email", search: { email } });
   }
   return (
     <Card {...props}>
@@ -73,29 +78,46 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Password</FieldLabel>
-              <Input
-                id="password"
-                type="password"
-                placeholder="123456789"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="123456789"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               <FieldDescription>
                 Must be at least 9 characters long.
               </FieldDescription>
             </Field>
-            {/* <Field>
-              <FieldLabel htmlFor="confirm-password">
-                Confirm Password
-              </FieldLabel>
-              <Input id="confirm-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              <FieldDescription>Please confirm your password.</FieldDescription>
-            </Field> */}
-            {error && <p className="text-red-600 text-sm">{error}</p>}
+            {error && (
+              <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
             <FieldGroup>
               <Field>
-                <Button type="submit">Create Account</Button>
+                <Button
+                  type="submit"
+                  className="bg-foreground cursor-pointer hover:bg-foreground/80"
+                >
+                  {isLoading ? <Spinner /> : "Create Account"}
+                </Button>
                 {/* <Button variant="outline" type="button">
                   Sign up with Google
                 </Button> */}

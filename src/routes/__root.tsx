@@ -11,9 +11,10 @@ import { authClient } from "~/lib/auth/auth-client";
 import { getSessionFn } from "~/lib/auth/session.functions";
 import { ThemeProvider } from "~/components/theme-provider";
 import { ModeToggle } from "~/components/mode-toggle";
-import { TooltipProvider } from "~/components/ui/tooltip"
+import { TooltipProvider } from "~/components/ui/tooltip";
 import NotFoundPage from "~/components/notFoundPage";
-import { Toaster } from "~/components/ui/sonner"
+import { Toaster } from "~/components/ui/sonner";
+import { toast } from "sonner";
 export const Route = createRootRoute({
   /**
    * TODO 11: Ôn lại — gọi getSessionFn(), return { session } để mọi route
@@ -57,7 +58,12 @@ function RootComponent() {
 
   async function handleSignOut() {
     await authClient.signOut({
-      fetchOptions: { onSuccess: () => router.invalidate() },
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("Đăng xuất thành công!");
+          router.invalidate();
+        },
+      },
     });
   }
 
@@ -65,18 +71,27 @@ function RootComponent() {
     <RootDocument>
       <ThemeProvider defaultTheme="system" storageKey="theme">
         <nav className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border text-[15px] font-semibold">
-          <Link to="/" className="font-bold text-lg tracking-tight text-foreground flex items-center gap-2">
+          <Link
+            to="/"
+            className="font-bold text-lg tracking-tight text-foreground flex items-center gap-2"
+          >
             Blog
           </Link>
 
           <ul aria-label="Điều hướng chính" className="flex gap-6 items-center">
             <li>
-              <a href="#notes" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a
+                href="#notes"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Notes
               </a>
             </li>
             <li>
-              <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a
+                href="#about"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 About
               </a>
             </li>
@@ -86,19 +101,31 @@ function RootComponent() {
             <ModeToggle />
             {session ? (
               <>
-                <Link to="/admin/posts" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  to="/admin/posts"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   Quản lý bài viết
                 </Link>
-                <button onClick={handleSignOut} className="text-muted-foreground hover:text-foreground transition-colors underline cursor-pointer">
+                <button
+                  onClick={handleSignOut}
+                  className="text-muted-foreground hover:text-foreground transition-colors underline cursor-pointer"
+                >
                   Đăng xuất
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  to="/login"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   Đăng nhập
                 </Link>
-                <Link to="/register" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  to="/register"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   Đăng ký
                 </Link>
               </>
@@ -118,7 +145,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <Toaster position="top-center"/>
+        <Toaster position="top-center" richColors />
         <TooltipProvider>{children}</TooltipProvider>
         <Scripts />
       </body>

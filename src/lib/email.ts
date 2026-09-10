@@ -27,3 +27,23 @@ export async function sendVerificationEmail({ to, subject, html }: SendEmailPara
     console.error('Lỗi khi thực thi sendEmail:', err);
   }
 }
+
+export async function sendResetPassword({to, subject, html}: SendEmailParams) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "Capstone <onboarding@resend.dev>",
+      to,
+      subject,
+      html,
+    })
+
+    if (error) {
+      console.error('Lỗi gửi email từ Resend:', error);
+      throw new Error(error.message);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Lỗi khi thực thi sendEmail:', error);
+  }
+}
