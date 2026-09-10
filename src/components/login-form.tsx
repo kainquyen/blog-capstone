@@ -124,6 +124,7 @@ export function LoginForm({
                 <Button
                   type="submit"
                   className="w-full cursor-pointer bg-foreground hover:bg-foreground/80"
+                  disabled={isSubmit}
                 >
                   {isSubmit ? <Spinner className="w-4 h-4" /> : "Đăng nhập"}
                 </Button>

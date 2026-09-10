@@ -38,7 +38,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       setIsLoading(false);
       return;
     }
-    // navigate({ to: "/email/verify-email", search: { email } });
+    navigate({ to: "/email/verify-email", search: { email } });
   }
   return (
     <Card {...props}>
@@ -115,6 +115,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <Button
                   type="submit"
                   className="bg-foreground cursor-pointer hover:bg-foreground/80"
+                  disabled={isLoading}
                 >
                   {isLoading ? <Spinner /> : "Create Account"}
                 </Button>
