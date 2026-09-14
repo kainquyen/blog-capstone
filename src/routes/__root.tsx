@@ -16,6 +16,7 @@ import { TooltipProvider } from "~/components/ui/tooltip";
 import NotFoundPage from "~/components/notFoundPage";
 import { Toaster } from "~/components/ui/sonner";
 import { toast } from "sonner";
+import { RouterProgressBar } from "~/components/router-progress-bar";
 export const Route = createRootRoute({
   beforeLoad: async () => {
     const session = await getSessionFn();
@@ -42,7 +43,9 @@ function RootComponent() {
   const router = useRouter();
   const { session } = Route.useRouteContext();
 
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useRouterState({
+    select: (s) => (s.resolvedLocation ?? s.location).pathname,
+  });
   const isDashboard = pathname.startsWith("/dashboard");
 
   async function handleSignOut() {
@@ -137,6 +140,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <Toaster position="top-center" richColors />
+        <RouterProgressBar />
         <TooltipProvider>{children}</TooltipProvider>
         <Scripts />
       </body>
