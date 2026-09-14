@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   DropdownMenu,
@@ -17,10 +18,19 @@ import {
 import {
   EllipsisVerticalIcon,
   CircleUserRoundIcon,
-  CreditCardIcon,
-  BellIcon,
   LogOutIcon,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { authClient } from "~/lib/auth/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
@@ -34,8 +44,10 @@ export function NavUser({
     image?: string | null;
   };
 }) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { isMobile } = useSidebar();
-  const  router  = useRouter();
+  const router = useRouter();
+
   async function handleSignOut() {
     await authClient.signOut({
       fetchOptions: {
@@ -46,6 +58,17 @@ export function NavUser({
       },
     });
   }
+  async function handleDeleteAccount() {
+    await authClient.deleteUser({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.info("Vui lòng kiểm tra email của bạn để xác nhận xóa tài khoản!");
+          router.navigate({ to: "/login" });
+        },
+      },
+    });
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -91,26 +114,56 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
                 <CircleUserRoundIcon />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCardIcon />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon />
-                Notifications
+              <DropdownMenuItem
+                variant="destructive"
+                className="cursor-pointer"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 />
+                Delete Account
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="cursor-pointer"
+            >
               <LogOutIcon />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your
+                account from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="cursor-pointer">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => {
+                  handleDeleteAccount();
+                  setShowDeleteDialog(false);
+                }}
+                className="cursor-pointer"
+              >
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SidebarMenuItem>
     </SidebarMenu>
   );

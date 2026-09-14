@@ -1,7 +1,11 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "~/lib/db/client";
-import { sendResetPassword, sendVerificationEmail } from "~/lib/email";
+import {
+  sendDeleteAccountVerification,
+  sendResetPassword,
+  sendVerificationEmail,
+} from "~/lib/email";
 
 // Boilerplate thư viện — không TODO, xem lại capstone trước nếu quên vì sao
 // khởi tạo ở module scope vẫn chấp nhận được ở ĐÂY (khác việc tự đọc
@@ -27,6 +31,27 @@ export const auth = betterAuth({
         required: true,
         defaultValue: "user",
         input: false,
+      },
+    },
+    deleteUser: {
+      enabled: true,
+      sendDeleteAccountVerification: async ({ user, url }) => {
+        void sendDeleteAccountVerification({
+          to: user.email,
+          subject: "Delete your account",
+          html: `
+            <div style="font-family: sans-serif; padding: 20px;">
+              <h2>Delete your account</h2>
+              <p>Xin chào ${user.name || "bạn"},</p>
+              <p>Chúng tôi nhận được yêu cầu xóa vĩnh viễn tài khoản của bạn.</p>
+              <p>Nếu bạn chắc chắn muốn xóa, hãy bấm nút bên dưới:</p>
+              <a href="${url}" style="background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Xác nhận xóa tài khoản
+              </a>
+              <p style="margin-top: 20px; color: #666; font-size: 12px;">Hoặc dán liên kết này vào trình duyệt: ${url}</p>
+            </div>
+          `,
+        });
       },
     },
   },

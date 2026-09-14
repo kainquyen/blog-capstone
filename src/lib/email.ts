@@ -47,3 +47,23 @@ export async function sendResetPassword({to, subject, html}: SendEmailParams) {
     console.error('Lỗi khi thực thi sendEmail:', error);
   }
 }
+
+export async function sendDeleteAccountVerification ({to, subject, html}: SendEmailParams) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "Capstone <onboarding@resend.dev>",
+      to,
+      subject,
+      html,
+    })
+
+    if (error) {
+      console.error('Lỗi gửi email từ Resend:', error);
+      throw new Error(error.message);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Lỗi khi thực thi sendEmail:', error);
+  }
+}

@@ -52,7 +52,6 @@ export const Route = createFileRoute("/dashboard/posts")({
 
 function AdminPostsPage() {
   const { posts, topics } = Route.useLoaderData();
-
   const initialPosts = posts as unknown as Post[];
   const {
     postList,
