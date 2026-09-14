@@ -92,7 +92,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       <Card className="w-full max-w-sm absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
         <CardHeader className=" flex flex-col items-center text-center">
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle2 className="h-6 w-6 text-primary" />
+            <CheckCircle2 className="h-6 w-6 text-green-600" />
           </div>
           <CardTitle>Đặt lại mật khẩu thành công</CardTitle>
           <CardDescription>

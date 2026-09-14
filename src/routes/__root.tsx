@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   useRouter,
+  useRouterState,
 } from "@tanstack/react-router";
 import "~/styles/app.css";
 import { authClient } from "~/lib/auth/auth-client";
@@ -16,26 +17,12 @@ import NotFoundPage from "~/components/notFoundPage";
 import { Toaster } from "~/components/ui/sonner";
 import { toast } from "sonner";
 export const Route = createRootRoute({
-  /**
-   * TODO 11: Ôn lại — gọi getSessionFn(), return { session } để mọi route
-   * con lấy được qua Route.useRouteContext() (đúng "Server-Driven State"
-   * đã học, tránh nhấp nháy nav login/logout).
-   */
   beforeLoad: async () => {
     const session = await getSessionFn();
     return { session };
   },
   notFoundComponent: () => <NotFoundPage />,
 
-  /**
-   * TODO 12: SEO mặc định cho toàn site — đây là kiến thức MỚI so với
-   * capstone trước (trang docs "SEO" bạn vừa đọc). Thêm các thẻ meta cơ
-   * bản: description, og:title, og:description, og:type. Route con (bài
-   * viết cụ thể) sẽ OVERRIDE lại các field này bằng head() riêng của nó
-   * (xem post.$slug.tsx) — nhớ lại cách route lá "kế thừa và ghi đè" head
-   * từ route cha, giống hệt cách CSS import kế thừa theo vị trí route đã
-   * học ở trang CSS Styling.
-   */
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -44,7 +31,6 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       { title: "Blog Capstone" },
-      // TODO 12: thêm các meta còn lại
       { name: "description", content: "Ghi chép hành trình học full-stack" },
       { property: "og:type", content: "website" },
     ],
@@ -55,6 +41,9 @@ export const Route = createRootRoute({
 function RootComponent() {
   const router = useRouter();
   const { session } = Route.useRouteContext();
+
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isDashboard = pathname.startsWith("/dashboard");
 
   async function handleSignOut() {
     await authClient.signOut({
@@ -70,7 +59,8 @@ function RootComponent() {
   return (
     <RootDocument>
       <ThemeProvider defaultTheme="system" storageKey="theme">
-        <nav className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border text-[15px] font-semibold">
+        {!isDashboard && (
+          <nav className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border text-[15px] font-semibold">
           <Link
             to="/"
             className="font-bold text-lg tracking-tight text-foreground flex items-center gap-2"
@@ -102,10 +92,10 @@ function RootComponent() {
             {session ? (
               <>
                 <Link
-                  to="/admin/posts"
+                  to="/dashboard"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Quản lý bài viết
+                  Dashboard
                 </Link>
                 <button
                   onClick={handleSignOut}
@@ -131,7 +121,8 @@ function RootComponent() {
               </>
             )}
           </div>
-        </nav>
+          </nav>
+        )}
         <Outlet />
       </ThemeProvider>
     </RootDocument>

@@ -39,7 +39,7 @@ function AdminError({ error, reset }: ErrorComponentProps) {
   );
 }
 
-export const Route = createFileRoute("/_authed/admin/posts")({
+export const Route = createFileRoute("/dashboard/posts")({
   loader: async () => {
     const [posts, topics] = await Promise.all([getMyPosts(), getTopics()]);
     return { posts, topics };
@@ -70,7 +70,7 @@ function AdminPostsPage() {
   } = usePostForm(initialPosts);
 
   return (
-    <div className="space-y-8 w-full max-w-[1184px] mx-auto px-4 md:px-7 flex-1 mt-20">
+    <div className="space-y-8 w-full max-w-[1184px] mx-auto px-4 md:px-7 flex-1 py-6">
       <h1 className="text-2xl font-bold">Quản lý bài viết của tôi</h1>
 
       {successMessage && <p className="text-green-600">{successMessage}</p>}
