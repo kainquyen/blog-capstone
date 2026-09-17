@@ -17,6 +17,7 @@ import NotFoundPage from "~/components/notFoundPage";
 import { Toaster } from "~/components/ui/sonner";
 import { toast } from "sonner";
 import { RouterProgressBar } from "~/components/router-progress-bar";
+import { Providers } from "~/components/providers";
 export const Route = createRootRoute({
   beforeLoad: async () => {
     const session = await getSessionFn();
@@ -62,79 +63,81 @@ function RootComponent() {
   return (
     <RootDocument>
       <ThemeProvider defaultTheme="system" storageKey="theme">
-        {!isDashboard && (
-          <nav className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border text-[15px] font-semibold">
-          <Link
-            to="/"
-            className="font-bold text-lg tracking-tight text-foreground flex items-center gap-2"
-          >
-            Blog
-          </Link>
+        <Providers>
+          {!isDashboard && (
+            <nav className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border text-[15px] font-semibold">
+            <Link
+              to="/"
+              className="font-bold text-lg tracking-tight text-foreground flex items-center gap-2"
+            >
+              Blog
+            </Link>
 
-          <ul aria-label="Điều hướng chính" className="flex gap-6 items-center">
-            <li>
-              <a
-                href="#notes"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Notes
-              </a>
-            </li>
-            <li>
-              <a
-                href="#about"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                About
-              </a>
-            </li>
-            <li>
-              <Link
-                to="/dashboard"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Dashboard
-              </Link>
-            </li>
-          </ul>
-
-          <div className="flex items-center gap-4 text-sm">
-            <ModeToggle />
-            {session ? (
-              <>
+            <ul aria-label="Điều hướng chính" className="flex gap-6 items-center">
+              <li>
+                <a
+                  href="#notes"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Notes
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#about"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  About
+                </a>
+              </li>
+              <li>
                 <Link
                   to="/dashboard"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Dashboard
                 </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="text-muted-foreground hover:text-foreground transition-colors underline cursor-pointer"
-                >
-                  Đăng xuất
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Đăng nhập
-                </Link>
-                <Link
-                  to="/register"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Đăng ký
-                </Link>
-              </>
-            )}
-          </div>
-          </nav>
-        )}
-        <Outlet />
+              </li>
+            </ul>
+
+            <div className="flex items-center gap-4 text-sm">
+              <ModeToggle />
+              {session ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-muted-foreground hover:text-foreground transition-colors underline cursor-pointer"
+                  >
+                    Đăng xuất
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Đăng nhập
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Đăng ký
+                  </Link>
+                </>
+              )}
+            </div>
+            </nav>
+          )}
+          <Outlet />
+        </Providers>
       </ThemeProvider>
     </RootDocument>
   );
