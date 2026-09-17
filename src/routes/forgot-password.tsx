@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { AlertCircle, ArrowLeft, KeyRound, RotateCw } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
@@ -13,9 +13,14 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { authClient } from "~/lib/auth/auth-client";
+import { getSessionFn } from "~/lib/auth/session.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/forgot-password")({
+  beforeLoad: async ({ location }) => {
+    const session = await getSessionFn()
+    if (session) throw redirect({ to: "/" })
+  },
   component: RouteComponent,
 });
 

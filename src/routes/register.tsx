@@ -1,7 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { SignupForm } from "~/components/signup-form";
+import { getSessionFn } from "~/lib/auth/session.functions";
 
 export const Route = createFileRoute("/register")({
+  beforeLoad: async ({ location }) => {
+    const session = await getSessionFn()
+    if (session) throw redirect({ to: "/" })
+  },
   component: RegisterPage,
 });
 
