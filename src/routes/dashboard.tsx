@@ -5,9 +5,9 @@ import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar'
 import { getSessionFn } from '~/lib/auth/session.functions'
 
 export const Route = createFileRoute('/dashboard')({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const session = await getSessionFn()
-    if (!session) throw redirect({ to: '/login' })
+    if (!session) throw redirect({ to: '/login', search: { redirectTo: location.href } })
     return { session }
   },
   component: DashboardLayout,
@@ -15,6 +15,7 @@ export const Route = createFileRoute('/dashboard')({
 
 function DashboardLayout() {
   const { session } = Route.useRouteContext()
+  
   return (
     <SidebarProvider
       style={

@@ -21,10 +21,15 @@ import { toast } from "sonner";
 import { Spinner } from "~/components/ui/spinner";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
+
+type LoginFormProps = {
+  redirectTo?: string
+}
 export function LoginForm({
   className,
+  redirectTo,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & LoginFormProps) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,10 +37,6 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * TODO 16b: gọi signIn.email({ email, password }), xử lý error, nếu
-   * thành công navigate({ to: '/' }).
-   */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -51,7 +52,8 @@ export function LoginForm({
         return;
       }
       toast.success("Đăng nhập thành công!");
-      navigate({ to: "/" });
+      console.log('ccccc', redirectTo)
+      navigate({ to: redirectTo || "/" });
     } catch (err) {
       setError("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
     } finally {

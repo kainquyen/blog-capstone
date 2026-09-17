@@ -88,6 +88,14 @@ function RootComponent() {
                 About
               </a>
             </li>
+            <li>
+              <Link
+                to="/dashboard"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Dashboard
+              </Link>
+            </li>
           </ul>
 
           <div className="flex items-center gap-4 text-sm">
