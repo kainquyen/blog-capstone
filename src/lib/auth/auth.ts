@@ -1,11 +1,8 @@
 import { betterAuth, email } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "~/lib/db/client";
-import {
-  sendEmail
-} from "~/lib/email";
 
-import {sendDeleteAccountVerification, sendVerificationEmail} from "~/lib/auth/auth-email"
+import { sendDeleteAccountVerification, sendVerificationEmail, sendResetPassword, sendPasswordResetNotification } from "~/lib/auth/auth-email"
 
 export const auth = betterAuth({
   database: drizzleAdapter(getDb(), { provider: "pg" }),
@@ -39,7 +36,7 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }, request) => {
-      await sendVerificationEmail({user, url})
+      await sendVerificationEmail({ user, url })
     },
 
     autoSignInAfterVerification: true,
@@ -49,21 +46,12 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     enabled: true,
     sendResetPassword: async ({ user, url }, request) => {
-      void sendEmail({
-        to: user.email,
-        subject: "Reset your password",
-        html: `
-          <div style="font-family: sans-serif; padding: 20px;">
-            <h2>Đặt lại mật khẩu</h2>
-            <p>Xin chào ${user.name || "bạn"},</p>
-            <p>Vui lòng nhấp vào nút bên dưới để đặt lại mật khẩu của bạn:</p>
-            <a href="${url}" style="background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Đặt lại Mật khẩu
-            </a>
-            <p style="margin-top: 20px; color: #666; font-size: 12px;">Hoặc dán liên kết này vào trình duyệt: ${url}</p>
-          </div>
-        `,
-      });
+      await sendResetPassword({ user, url })
+    },
+    onPasswordReset: async ({ user }, request) => {
+      const now = new Date();
+      const time = now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
+      await sendPasswordResetNotification({ user, timestamp: time })
     },
   },
 });
