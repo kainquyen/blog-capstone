@@ -1,15 +1,12 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, email } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "~/lib/db/client";
 import {
-  sendDeleteAccountVerification,
-  sendResetPassword,
-  sendVerificationEmail,
+  sendEmail
 } from "~/lib/email";
 
-// Boilerplate thư viện — không TODO, xem lại capstone trước nếu quên vì sao
-// khởi tạo ở module scope vẫn chấp nhận được ở ĐÂY (khác việc tự đọc
-// process.env cho 1 giá trị cụ thể).
+import {sendDeleteAccountVerification, sendVerificationEmail} from "~/lib/auth/auth-email"
+
 export const auth = betterAuth({
   database: drizzleAdapter(getDb(), { provider: "pg" }),
   secret: process.env.BETTER_AUTH_SECRET,
@@ -36,42 +33,13 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
       sendDeleteAccountVerification: async ({ user, url }) => {
-        void sendDeleteAccountVerification({
-          to: user.email,
-          subject: "Delete your account",
-          html: `
-            <div style="font-family: sans-serif; padding: 20px;">
-              <h2>Delete your account</h2>
-              <p>Xin chào ${user.name || "bạn"},</p>
-              <p>Chúng tôi nhận được yêu cầu xóa vĩnh viễn tài khoản của bạn.</p>
-              <p>Nếu bạn chắc chắn muốn xóa, hãy bấm nút bên dưới:</p>
-              <a href="${url}" style="background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                Xác nhận xóa tài khoản
-              </a>
-              <p style="margin-top: 20px; color: #666; font-size: 12px;">Hoặc dán liên kết này vào trình duyệt: ${url}</p>
-            </div>
-          `,
-        });
+        await sendDeleteAccountVerification({ user, url })
       },
     },
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }, request) => {
-      void sendVerificationEmail({
-        to: user.email,
-        subject: "Xác thực địa chỉ email của bạn",
-        html: `
-          <div style="font-family: sans-serif; padding: 20px;">
-            <h2>Xác thực tài khoản</h2>
-            <p>Xin chào ${user.name || "bạn"},</p>
-            <p>Vui lòng nhấp vào nút bên dưới để xác thực địa chỉ email của bạn:</p>
-            <a href="${url}" style="background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Xác thực Email
-            </a>
-            <p style="margin-top: 20px; color: #666; font-size: 12px;">Hoặc dán liên kết này vào trình duyệt: ${url}</p>
-          </div>
-        `,
-      });
+      await sendVerificationEmail({user, url})
     },
 
     autoSignInAfterVerification: true,
@@ -81,7 +49,7 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     enabled: true,
     sendResetPassword: async ({ user, url }, request) => {
-      void sendResetPassword({
+      void sendEmail({
         to: user.email,
         subject: "Reset your password",
         html: `
