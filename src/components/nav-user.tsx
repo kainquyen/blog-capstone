@@ -78,7 +78,7 @@ export function NavUser({
               <SidebarMenuButton size="lg" className="aria-expanded:bg-muted" />
             }
           >
-            <Avatar className="size-8 rounded-lg grayscale">
+            <Avatar className="size-8 rounded-lg">
               <AvatarImage src={user.image ?? ""} alt={user.name} />
               <AvatarFallback className="rounded-lg">CN</AvatarFallback>
             </Avatar>
