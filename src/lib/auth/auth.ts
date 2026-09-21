@@ -1,6 +1,7 @@
 import { betterAuth, email } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "~/lib/db/client";
+import { admin } from "better-auth/plugins"
 
 import { sendDeleteAccountVerification, sendVerificationEmail, sendResetPassword, sendPasswordResetNotification } from "~/lib/auth/auth-email"
 
@@ -18,6 +19,9 @@ export const auth = betterAuth({
       "/sign-up/email": { window: 60, max: 3 },
     },
   },
+  plugins: [
+    admin()
+  ],
   user: {
     additionalFields: {
       role: {
