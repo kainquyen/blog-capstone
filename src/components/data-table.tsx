@@ -31,6 +31,7 @@ import {
   rowSortingFeature,
   tableFeatures,
   useTable,
+  filterFn_includesString,
   type ColumnFiltersState,
   type ColumnVisibilityState,
   type Row,
@@ -141,6 +142,7 @@ const features = tableFeatures({
   filteredRowModel: createFilteredRowModel(),
   paginatedRowModel: createPaginatedRowModel(),
   sortedRowModel: createSortedRowModel(),
+  filterFns: { includesString: filterFn_includesString },
 });
 
 const columnHelper = createColumnHelper<
@@ -155,6 +157,7 @@ export const schema = z.object({
   emailVerified: z.boolean(),
   banned: z.boolean(),
   role: z.string(),
+  banReason: z.string(),
   createdAt: z.date(),
 });
 
@@ -180,7 +183,7 @@ function DragHandle({ id }: { id: string }) {
 function RowActions({ item }: { item: z.infer<typeof schema> }) {
   const [banOpen, setBanOpen] = useState(false);
   const [unbanOpen, setUnbanOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
 
   async function handleBanConfirm() {
@@ -198,6 +201,7 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
     queryClient.invalidateQueries({
       queryKey: ["users"],
     });
+    toast.success(`Ban thành công với ${item.email}`);
     setBanOpen(false);
   }
 
@@ -214,6 +218,7 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
     queryClient.invalidateQueries({
       queryKey: ["users"],
     });
+    toast.success(`Gỡ ban thành công cho ${item.email}`);
     setUnbanOpen(false);
   }
 
@@ -370,6 +375,7 @@ const columns = columnHelper.columns([
     ),
   }),
   columnHelper.accessor("email", {
+    filterFn: "includesString",
     header: ({ column }) => (
       <Button
         variant="ghost"
@@ -539,7 +545,7 @@ export function DataTable({
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
             <Columns3Icon data-icon="inline-start" />
-            Columns
+            Hiển thị
             <ChevronDownIcon data-icon="inline-end" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-32">
@@ -566,6 +572,14 @@ export function DataTable({
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        <Input
+          placeholder="Tìm kiếm user theo email..."
+          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          onChange={(event) => {
+            table.getColumn("email")?.setFilterValue(event.target.value);
+          }}
+          className="w-2xs"
+        />
       </div>
       <TabsContent
         value="outline"
