@@ -45,14 +45,17 @@ export function LoginForm({
       const { data, error } = await signIn.email({ email, password });
       if (error) {
         if (error.status === 403) {
-          toast.warning("Vui lòng xác thực email trước khi đăng nhập");
+          if (error.code === "BANNED_USER") {
+            toast.error("Tài khoản đã bị khóa. Vui lòng liên hệ với đội ngũ hỗ trợ để biết đây là nhầm lẫn hoặc lỗi!");
+          } else {
+            toast.warning("Vui lòng xác thực email trước khi đăng nhập!");
+          }
         } else {
-          setError("Email hoặc mật khẩu không hợp lệ");
+          setError("Email hoặc mật khẩu không hợp lệ!");
         }
         return;
       }
       toast.success("Đăng nhập thành công!");
-      console.log('ccccc', redirectTo)
       navigate({ to: redirectTo || "/" });
     } catch (err) {
       setError("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");

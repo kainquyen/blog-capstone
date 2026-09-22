@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataTable } from "~/components/data-table";
-import { useEffect, useState } from "react";
 import { authClient } from "~/lib/auth/auth-client";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/dashboard/users")({
   component: UsersComponent,
@@ -9,36 +9,33 @@ export const Route = createFileRoute("/dashboard/users")({
     meta: [
       { title: "Users" },
       {
-        name: 'description',
-        content: 'List of users',
+        name: "description",
+        content: "List of users",
       },
-    ]
-  })
+    ],
+  }),
 });
 
 function UsersComponent() {
-  const [users, setUsers] = useState<any[]>([]);
-
-  useEffect(() => {
-    async function fetchUsers() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
       const { data, error } = await authClient.admin.listUsers({
         query: {
+          sortBy: "createdAt",
+          sortDirection: "desc",
           limit: 100,
         },
       });
 
-      if (error) {
-        console.error("Lỗi lấy danh sách user:", error);
-        return;
-      }
+      if (error) throw new Error(error.message);
+      return data?.users;
+    },
+  });
 
-      if (data) {
-        // console.log(data.users);
-        setUsers(data.users);
-      }
-    }
+  if (isLoading) return <div>Loading...</div>;
 
-    fetchUsers();
-  }, []);
-  return <DataTable data={users} />;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return <DataTable data={data ?? []} />;
 }

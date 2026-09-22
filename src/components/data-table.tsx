@@ -103,7 +103,32 @@ import {
   TrendingUpIcon,
   CircleXIcon,
   ArrowUpDownIcon,
+  Pen,
+  Trash2,
+  Ban,
+  LockOpen,
 } from "lucide-react";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
+import { useState } from "react";
+import { authClient } from "~/lib/auth/auth-client";
+import { useQueryClient } from "@tanstack/react-query";
 
 // New in v9: declare the features this table uses — anything you don't
 // register is tree-shaken out of the bundle.
@@ -128,6 +153,7 @@ export const schema = z.object({
   name: z.string(),
   email: z.string(),
   emailVerified: z.boolean(),
+  banned: z.boolean(),
   role: z.string(),
   createdAt: z.date(),
 });
@@ -150,6 +176,154 @@ function DragHandle({ id }: { id: string }) {
     </Button>
   );
 }
+// Tách thành component riêng để có thể dùng useState
+function RowActions({ item }: { item: z.infer<typeof schema> }) {
+  const [banOpen, setBanOpen] = useState(false);
+  const [unbanOpen, setUnbanOpen] = useState(false);
+  
+  const queryClient = useQueryClient();
+
+  async function handleBanConfirm() {
+    // TODO: gọi API ban user
+    const { data, error } = await authClient.admin.banUser({
+      userId: item.id,
+      banReason: "Vi phạm điều khoản cộng đồng", // Lý do ban (tùy chọn)
+      // banExpiresIn: "7d" // Thời hạn ban, ví dụ 7 ngày (tùy chọn)
+    });
+
+    if (error) {
+      console.error("Lỗi khi ban user:", error.message);
+      return;
+    }
+    queryClient.invalidateQueries({
+      queryKey: ["users"],
+    });
+    setBanOpen(false);
+  }
+
+  async function handleUnbanConfirm() {
+    const { data, error } = await authClient.admin.unbanUser({
+      userId: item.id,
+    });
+
+    if (error) {
+      console.error("Lỗi khi bỏ ban user:", error.message);
+      return;
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["users"],
+    });
+    setUnbanOpen(false);
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {/* Nút Edit */}
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="outline"
+              className="cursor-pointer rounded px-2 py-1 text-sm"
+            >
+              <Pen size={14} />
+            </Button>
+          }
+        />
+        <TooltipContent>Thay đổi thông tin</TooltipContent>
+      </Tooltip>
+
+      {/* Nút Ban / Unban — Tooltip và AlertDialog tách biệt hoàn toàn */}
+      {!item.banned ? (
+        <>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="cursor-pointer rounded px-2 py-1 text-sm"
+                  onClick={() => setBanOpen(true)}
+                >
+                  <Ban size={14} color="red" />
+                </Button>
+              }
+            />
+            <TooltipContent>Ban/Cấm người dùng</TooltipContent>
+          </Tooltip>
+
+          <AlertDialog open={banOpen} onOpenChange={setBanOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Bạn có chắc chắn muốn ban user này không?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Hành động này có thể hoàn tác. Nó sẽ khóa tài khoản của user
+                  này.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setBanOpen(false)}>
+                  Hủy
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-500 text-white hover:bg-red-600"
+                  onClick={handleBanConfirm}
+                >
+                  Đồng ý
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      ) : (
+        <>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="cursor-pointer rounded px-2 py-1 text-sm"
+                  onClick={() => setUnbanOpen(true)}
+                >
+                  <LockOpen size={14} color="green" />
+                </Button>
+              }
+            />
+            <TooltipContent>Bỏ Ban/Cấm người dùng</TooltipContent>
+          </Tooltip>
+
+          <AlertDialog open={unbanOpen} onOpenChange={setUnbanOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Bạn có chắc chắn muốn bỏ ban user này không?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Hành động này có thể hoàn tác. Nó sẽ mở khóa tài khoản của
+                  user này.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setUnbanOpen(false)}>
+                  Hủy
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-green-600 text-white hover:bg-green-700"
+                  onClick={handleUnbanConfirm}
+                >
+                  Đồng ý
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
+    </div>
+  );
+}
+
 const columns = columnHelper.columns([
   columnHelper.display({
     id: "drag",
@@ -187,9 +361,10 @@ const columns = columnHelper.columns([
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="p-0"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Name
+        Tên
         <ArrowUpDownIcon className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -198,6 +373,7 @@ const columns = columnHelper.columns([
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="p-0"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Email
@@ -209,9 +385,10 @@ const columns = columnHelper.columns([
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="p-0"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Email Verified
+        Email đã xác thực
         <ArrowUpDownIcon className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -230,9 +407,10 @@ const columns = columnHelper.columns([
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="p-0"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Role
+        Vai trò
         <ArrowUpDownIcon className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -246,9 +424,10 @@ const columns = columnHelper.columns([
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="p-0"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Created At
+        Ngày tạo
         <ArrowUpDownIcon className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -260,29 +439,8 @@ const columns = columnHelper.columns([
   }),
   columnHelper.display({
     id: "actions",
-    cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="ghost"
-              className="flex size-8 text-muted-foreground data-open:bg-muted"
-              size="icon"
-            />
-          }
-        >
-          <EllipsisVerticalIcon />
-          <span className="sr-only">Open menu</span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    header: () => <span>Thao tác</span>,
+    cell: ({ row }) => <RowActions item={row.original} />,
   }),
 ]);
 function DraggableRow({
@@ -413,7 +571,7 @@ export function DataTable({
         value="outline"
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
       >
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-lg">
           <DndContext
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
