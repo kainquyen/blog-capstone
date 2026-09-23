@@ -108,6 +108,10 @@ import {
   Trash2,
   Ban,
   LockOpen,
+  UserIcon,
+  CreditCardIcon,
+  SettingsIcon,
+  LogOutIcon,
 } from "lucide-react";
 
 import {
@@ -503,6 +507,7 @@ export function DataTable({
     useSensor(TouchSensor, {}),
     useSensor(KeyboardSensor, {}),
   );
+  const queryClient = useQueryClient();
   const dataIds = React.useMemo<UniqueIdentifier[]>(
     () => data?.map(({ id }) => id) || [],
     [data],
@@ -526,6 +531,8 @@ export function DataTable({
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
   });
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (active && over && active.id !== over.id) {
@@ -536,42 +543,113 @@ export function DataTable({
       });
     }
   }
+  async function handleBanMultipleUser() {
+    const selectedIds = selectedRows.map((row) => row.original.id);
+    
+    const results = await Promise.allSettled(
+      selectedIds.map((id) => 
+        authClient.admin.banUser({
+          userId: id,
+          banReason: "Vi phạm tiểu chuẩn cộng đồng"
+        })
+      )
+    )
+    const successful = results.filter((r) => r.status === 'fulfilled')
+    const failed = results.filter((r) => r.status === 'rejected')
+
+    toast.success(`Đã ban thành công ${successful.length}/${selectedIds.length} người dùng`)
+    queryClient.invalidateQueries({
+      queryKey: ["users"]
+    })
+    if(failed.length > 0) {
+      toast.error(`Thất bại ${failed.length} người dùng`)
+    }
+  }
+
+  async function handleUnbanMultipleUser() {
+    const selectedIds = selectedRows.map((row) => row.original.id);
+    
+    const results = await Promise.allSettled(
+      selectedIds.map((id) => 
+        authClient.admin.unbanUser({
+          userId: id,
+        })
+      )
+    )
+    const successful = results.filter((r) => r.status === 'fulfilled')
+    const failed = results.filter((r) => r.status === 'rejected')
+
+    queryClient.invalidateQueries({
+      queryKey: ["users"]
+    })
+    toast.success(`Đã unban thành công ${successful.length}/${selectedIds.length} người dùng`)
+    if(failed.length > 0) {
+      toast.error(`Thất bại ${failed.length} người dùng`)
+    }
+    
+  }
+
   return (
     <Tabs
       defaultValue="outline"
       className="w-full flex-col justify-start gap-6 mt-5"
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
-            <Columns3Icon data-icon="inline-start" />
-            Hiển thị
-            <ChevronDownIcon data-icon="inline-end" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-32">
-            {table
-              .getAllColumns()
-              .filter(
-                (column) =>
-                  typeof column.accessorFn !== "undefined" &&
-                  column.getCanHide(),
-              )
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button variant="outline"/>}
+            >
+              <Columns3Icon data-icon="inline-start" />
+              Hiển thị
+              <ChevronDownIcon data-icon="inline-end" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-32">
+              {table
+                .getAllColumns()
+                .filter(
+                  (column) =>
+                    typeof column.accessorFn !== "undefined" &&
+                    column.getCanHide(),
+                )
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu disabled={selectedRows.length === 0}>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline">
+                  Thao tác ({selectedRows.length}){" "}
+                  <ChevronDownIcon data-icon="inline-end" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent>
+              <DropdownMenuItem className="text-green-500 hover:bg-green-500/10" onClick={handleUnbanMultipleUser}>
+                <LockOpen />
+                Unban
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={handleBanMultipleUser}>
+                <Ban />
+                Ban/Cấm
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
         <Input
           placeholder="Tìm kiếm user theo email..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}

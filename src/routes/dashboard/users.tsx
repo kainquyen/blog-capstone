@@ -17,8 +17,10 @@ export const Route = createFileRoute("/dashboard/users")({
 });
 
 function UsersComponent() {
+  const { session } = Route.useRouteContext();
   const { data, isLoading, error } = useQuery({
     queryKey: ["users"],
+    enabled: !!session?.user.email,
     queryFn: async () => {
       const { data, error } = await authClient.admin.listUsers({
         query: {
@@ -29,7 +31,7 @@ function UsersComponent() {
       });
 
       if (error) throw new Error(error.message);
-      return data?.users;
+      return (data?.users ?? []).filter((u) => u.email !== session.user.email);
     },
   });
 
