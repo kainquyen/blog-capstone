@@ -40,7 +40,7 @@ import {
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Switch } from "~/components/ui/switch"
+import { Switch } from "~/components/ui/switch";
 import { useIsMobile } from "~/hooks/use-mobile";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -145,7 +145,7 @@ import { Field, FieldGroup } from "~/components/ui/field";
 import {
   NativeSelect,
   NativeSelectOption,
-} from "~/components/ui/native-select"
+} from "~/components/ui/native-select";
 import { useState } from "react";
 import { authClient } from "~/lib/auth/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -203,10 +203,12 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
   const [banOpen, setBanOpen] = useState(false);
   const [unbanOpen, setUnbanOpen] = useState(false);
 
-  const [name, setName] = useState<string>(item.name)
-  const [email, setEmail] = useState<string>(item.email)
-  const [emailVerified, setEmailVerified] = useState<boolean>(item.emailVerified)
-  const [role, setRole] = useState<string>(item.role)
+  const [name, setName] = useState<string>(item.name);
+  const [email, setEmail] = useState<string>(item.email);
+  const [emailVerified, setEmailVerified] = useState<boolean>(
+    item.emailVerified,
+  );
+  const [role, setRole] = useState<string>(item.role);
 
   const queryClient = useQueryClient();
 
@@ -257,7 +259,7 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
       },
     });
     if (error) {
-      toast.error(`Lỗi khi thay đổi thông tin của ${email}`)
+      toast.error(`Lỗi khi thay đổi thông tin của ${email}`);
       console.error("Lỗi khi update user:", error.message);
       return;
     }
@@ -270,7 +272,7 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
   return (
     <div className="flex items-center gap-2">
       <Dialog>
-        <form >
+        <form>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -288,15 +290,19 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
 
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle className="leading-5">Thay đổi thông tin user: <span className="italic">{item.email}</span></DialogTitle>
+              <DialogTitle className="leading-5">
+                Thay đổi thông tin user:{" "}
+                <span className="italic">{item.email}</span>
+              </DialogTitle>
               <DialogDescription>
-                Thông tin user được thay đổi chỉ gồm trạng thái xác thực và quyền.
+                Thông tin user được thay đổi chỉ gồm trạng thái xác thực và
+                quyền.
               </DialogDescription>
             </DialogHeader>
             <FieldGroup>
               <Field>
                 <Label htmlFor="name-1">Tên</Label>
-                <Input id="name-1" defaultValue={name} disabled readOnly/>
+                <Input id="name-1" defaultValue={name} disabled readOnly />
               </Field>
               <Field>
                 <Label htmlFor="email-1">Email</Label>
@@ -304,16 +310,25 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
                   id="email-1"
                   name="email"
                   defaultValue={email}
-                  disabled readOnly
+                  disabled
+                  readOnly
                 />
               </Field>
               <Field>
                 <Label htmlFor="email-verified-1">Xác thực email</Label>
-                <Switch id="email-verified-1" checked={emailVerified} onCheckedChange={() => setEmailVerified(!emailVerified)} />
+                <Switch
+                  id="email-verified-1"
+                  checked={emailVerified}
+                  onCheckedChange={() => setEmailVerified(!emailVerified)}
+                />
               </Field>
               <Field>
                 <Label htmlFor="role-1">Quyền</Label>
-                <NativeSelect id="role-1" value={role} onChange={(e) => setRole(e.target.value)}>
+                <NativeSelect
+                  id="role-1"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                >
                   <NativeSelectOption value="user">User</NativeSelectOption>
                   <NativeSelectOption value="admin">Admin</NativeSelectOption>
                 </NativeSelect>
@@ -321,13 +336,14 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
             </FieldGroup>
             <DialogFooter>
               <DialogClose render={<Button variant="outline">Hủy</Button>} />
-              <Button type="submit" onClick={handleEditProfile}>Lưu thay đổi</Button>
+              <Button type="submit" onClick={handleEditProfile}>
+                Lưu thay đổi
+              </Button>
             </DialogFooter>
           </DialogContent>
         </form>
       </Dialog>
 
-      {/* Nút Ban / Unban — Tooltip và AlertDialog tách biệt hoàn toàn */}
       {!item.banned ? (
         <>
           <Tooltip>
@@ -585,6 +601,9 @@ export function DataTable({
     pageIndex: 0,
     pageSize: 10,
   });
+
+  const [emailVerified, setEmailVerified] = React.useState(false);
+  const [role, setRole] = React.useState("user");
   const sortableId = React.useId();
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -676,6 +695,35 @@ export function DataTable({
     }
   }
 
+  async function handleEditProfileMultiple(e: React.FormEvent) {
+    e.preventDefault();
+    const selectedIds = selectedRows.map((row) => row.original.id);
+    const results = await Promise.allSettled(
+      selectedIds.map((id) => {
+        return authClient.admin.updateUser({
+          userId: id,
+          data: {
+            emailVerified: emailVerified,
+            role: role as "user" | "admin",
+          },
+        });
+      }),
+    );
+
+    const successful = results.filter((r) => r.status === "fulfilled");
+    const failed = results.filter((r) => r.status === "rejected");
+
+    queryClient.invalidateQueries({
+      queryKey: ["users"],
+    });
+    toast.success(
+      `Đã cập nhật thành công ${successful.length}/${selectedIds.length} người dùng`,
+    );
+    if (failed.length > 0) {
+      toast.error(`Thất bại ${failed.length} người dùng`);
+    }
+  }
+
   return (
     <Tabs
       defaultValue="outline"
@@ -713,6 +761,61 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+          <Dialog>
+            <form>
+              <DialogTrigger
+                render={
+                  <Button variant="outline">
+                    <Pen />
+                    Sửa
+                  </Button>
+                }
+              />
+
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="leading-5">
+                    Thay đổi thông tin user
+                  </DialogTitle>
+                  <DialogDescription>
+                    Thông tin user được thay đổi chỉ gồm trạng thái xác thực và
+                    quyền.
+                  </DialogDescription>
+                </DialogHeader>
+                <FieldGroup>
+                  <Field>
+                    <Label htmlFor="email-verified">Xác thực email</Label>
+                    <Switch
+                      id="email-verified"
+                      checked={emailVerified}
+                      onCheckedChange={() => setEmailVerified(!emailVerified)}
+                    />
+                  </Field>
+                  <Field>
+                    <Label htmlFor="role">Quyền</Label>
+                    <NativeSelect
+                      id="role"
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                    >
+                      <NativeSelectOption value="user">User</NativeSelectOption>
+                      <NativeSelectOption value="admin">
+                        Admin
+                      </NativeSelectOption>
+                    </NativeSelect>
+                  </Field>
+                </FieldGroup>
+                <DialogFooter>
+                  <DialogClose
+                    render={<Button variant="outline">Hủy</Button>}
+                  />
+                  <Button type="submit" onClick={handleEditProfileMultiple}>
+                    Lưu thay đổi
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </form>
+          </Dialog>
           <DropdownMenu disabled={selectedRows.length === 0}>
             <DropdownMenuTrigger
               render={
@@ -724,7 +827,7 @@ export function DataTable({
             />
             <DropdownMenuContent>
               <DropdownMenuItem
-                className="text-green-500 hover:bg-green-500/10"
+                className="text-green-500 hover:bg-green-500/10 hover:text-green-500"
                 onClick={handleUnbanMultipleUser}
               >
                 <LockOpen />
