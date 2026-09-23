@@ -40,7 +40,7 @@ import {
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
-
+import { Switch } from "~/components/ui/switch"
 import { useIsMobile } from "~/hooks/use-mobile";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -131,6 +131,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Field, FieldGroup } from "~/components/ui/field";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "~/components/ui/native-select"
 import { useState } from "react";
 import { authClient } from "~/lib/auth/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -188,6 +203,11 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
   const [banOpen, setBanOpen] = useState(false);
   const [unbanOpen, setUnbanOpen] = useState(false);
 
+  const [name, setName] = useState<string>(item.name)
+  const [email, setEmail] = useState<string>(item.email)
+  const [emailVerified, setEmailVerified] = useState<boolean>(item.emailVerified)
+  const [role, setRole] = useState<string>(item.role)
+
   const queryClient = useQueryClient();
 
   async function handleBanConfirm() {
@@ -226,22 +246,86 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
     setUnbanOpen(false);
   }
 
+  async function handleEditProfile(e: React.FormEvent) {
+    e.preventDefault();
+    // TODO: gọi API update user
+    const { data, error } = await authClient.admin.updateUser({
+      userId: item.id,
+      data: {
+        emailVerified: emailVerified,
+        role: role as "user" | "admin",
+      },
+    });
+    if (error) {
+      toast.error(`Lỗi khi thay đổi thông tin của ${email}`)
+      console.error("Lỗi khi update user:", error.message);
+      return;
+    }
+    queryClient.invalidateQueries({
+      queryKey: ["users"],
+    });
+    toast.success(`Thay đổi thông tin thành công cho ${item.email}`);
+  }
+
   return (
     <div className="flex items-center gap-2">
-      {/* Nút Edit */}
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant="outline"
-              className="cursor-pointer rounded px-2 py-1 text-sm"
-            >
-              <Pen size={14} />
-            </Button>
-          }
-        />
-        <TooltipContent>Thay đổi thông tin</TooltipContent>
-      </Tooltip>
+      <Dialog>
+        <form >
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <DialogTrigger
+                  render={
+                    <Button variant="outline">
+                      <Pen />
+                    </Button>
+                  }
+                />
+              }
+            />
+            <TooltipContent>Thay đổi thông tin</TooltipContent>
+          </Tooltip>
+
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="leading-5">Thay đổi thông tin user: <span className="italic">{item.email}</span></DialogTitle>
+              <DialogDescription>
+                Thông tin user được thay đổi chỉ gồm trạng thái xác thực và quyền.
+              </DialogDescription>
+            </DialogHeader>
+            <FieldGroup>
+              <Field>
+                <Label htmlFor="name-1">Tên</Label>
+                <Input id="name-1" defaultValue={name} disabled readOnly/>
+              </Field>
+              <Field>
+                <Label htmlFor="email-1">Email</Label>
+                <Input
+                  id="email-1"
+                  name="email"
+                  defaultValue={email}
+                  disabled readOnly
+                />
+              </Field>
+              <Field>
+                <Label htmlFor="email-verified-1">Xác thực email</Label>
+                <Switch id="email-verified-1" checked={emailVerified} onCheckedChange={() => setEmailVerified(!emailVerified)} />
+              </Field>
+              <Field>
+                <Label htmlFor="role-1">Quyền</Label>
+                <NativeSelect id="role-1" value={role} onChange={(e) => setRole(e.target.value)}>
+                  <NativeSelectOption value="user">User</NativeSelectOption>
+                  <NativeSelectOption value="admin">Admin</NativeSelectOption>
+                </NativeSelect>
+              </Field>
+            </FieldGroup>
+            <DialogFooter>
+              <DialogClose render={<Button variant="outline">Hủy</Button>} />
+              <Button type="submit" onClick={handleEditProfile}>Lưu thay đổi</Button>
+            </DialogFooter>
+          </DialogContent>
+        </form>
+      </Dialog>
 
       {/* Nút Ban / Unban — Tooltip và AlertDialog tách biệt hoàn toàn */}
       {!item.banned ? (
@@ -545,48 +629,51 @@ export function DataTable({
   }
   async function handleBanMultipleUser() {
     const selectedIds = selectedRows.map((row) => row.original.id);
-    
+
     const results = await Promise.allSettled(
-      selectedIds.map((id) => 
+      selectedIds.map((id) =>
         authClient.admin.banUser({
           userId: id,
-          banReason: "Vi phạm tiểu chuẩn cộng đồng"
-        })
-      )
-    )
-    const successful = results.filter((r) => r.status === 'fulfilled')
-    const failed = results.filter((r) => r.status === 'rejected')
+          banReason: "Vi phạm tiểu chuẩn cộng đồng",
+        }),
+      ),
+    );
+    const successful = results.filter((r) => r.status === "fulfilled");
+    const failed = results.filter((r) => r.status === "rejected");
 
-    toast.success(`Đã ban thành công ${successful.length}/${selectedIds.length} người dùng`)
+    toast.success(
+      `Đã ban thành công ${successful.length}/${selectedIds.length} người dùng`,
+    );
     queryClient.invalidateQueries({
-      queryKey: ["users"]
-    })
-    if(failed.length > 0) {
-      toast.error(`Thất bại ${failed.length} người dùng`)
+      queryKey: ["users"],
+    });
+    if (failed.length > 0) {
+      toast.error(`Thất bại ${failed.length} người dùng`);
     }
   }
 
   async function handleUnbanMultipleUser() {
     const selectedIds = selectedRows.map((row) => row.original.id);
-    
+
     const results = await Promise.allSettled(
-      selectedIds.map((id) => 
+      selectedIds.map((id) =>
         authClient.admin.unbanUser({
           userId: id,
-        })
-      )
-    )
-    const successful = results.filter((r) => r.status === 'fulfilled')
-    const failed = results.filter((r) => r.status === 'rejected')
+        }),
+      ),
+    );
+    const successful = results.filter((r) => r.status === "fulfilled");
+    const failed = results.filter((r) => r.status === "rejected");
 
     queryClient.invalidateQueries({
-      queryKey: ["users"]
-    })
-    toast.success(`Đã unban thành công ${successful.length}/${selectedIds.length} người dùng`)
-    if(failed.length > 0) {
-      toast.error(`Thất bại ${failed.length} người dùng`)
+      queryKey: ["users"],
+    });
+    toast.success(
+      `Đã unban thành công ${successful.length}/${selectedIds.length} người dùng`,
+    );
+    if (failed.length > 0) {
+      toast.error(`Thất bại ${failed.length} người dùng`);
     }
-    
   }
 
   return (
@@ -597,9 +684,7 @@ export function DataTable({
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-3">
           <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant="outline"/>}
-            >
+            <DropdownMenuTrigger render={<Button variant="outline" />}>
               <Columns3Icon data-icon="inline-start" />
               Hiển thị
               <ChevronDownIcon data-icon="inline-end" />
@@ -638,12 +723,18 @@ export function DataTable({
               }
             />
             <DropdownMenuContent>
-              <DropdownMenuItem className="text-green-500 hover:bg-green-500/10" onClick={handleUnbanMultipleUser}>
+              <DropdownMenuItem
+                className="text-green-500 hover:bg-green-500/10"
+                onClick={handleUnbanMultipleUser}
+              >
                 <LockOpen />
                 Unban
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={handleBanMultipleUser}>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={handleBanMultipleUser}
+              >
                 <Ban />
                 Ban/Cấm
               </DropdownMenuItem>
