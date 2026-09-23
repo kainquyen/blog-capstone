@@ -37,30 +37,13 @@ import {
   type Row,
   type SortingState,
 } from "@tanstack/react-table";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Switch } from "~/components/ui/switch";
-import { useIsMobile } from "~/hooks/use-mobile";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "~/components/ui/chart";
+
 import { Checkbox } from "~/components/ui/checkbox";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "~/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -79,7 +62,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Separator } from "~/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -202,9 +184,6 @@ function DragHandle({ id }: { id: string }) {
 function RowActions({ item }: { item: z.infer<typeof schema> }) {
   const [banOpen, setBanOpen] = useState(false);
   const [unbanOpen, setUnbanOpen] = useState(false);
-
-  const [name, setName] = useState<string>(item.name);
-  const [email, setEmail] = useState<string>(item.email);
   const [emailVerified, setEmailVerified] = useState<boolean>(
     item.emailVerified,
   );
@@ -214,7 +193,7 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
 
   async function handleBanConfirm() {
     // TODO: gọi API ban user
-    const { data, error } = await authClient.admin.banUser({
+    const { error } = await authClient.admin.banUser({
       userId: item.id,
       banReason: "Vi phạm điều khoản cộng đồng", // Lý do ban (tùy chọn)
       // banExpiresIn: "7d" // Thời hạn ban, ví dụ 7 ngày (tùy chọn)
@@ -232,7 +211,7 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
   }
 
   async function handleUnbanConfirm() {
-    const { data, error } = await authClient.admin.unbanUser({
+    const { error } = await authClient.admin.unbanUser({
       userId: item.id,
     });
 
@@ -251,7 +230,7 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
   async function handleEditProfile(e: React.FormEvent) {
     e.preventDefault();
     // TODO: gọi API update user
-    const { data, error } = await authClient.admin.updateUser({
+    const { error } = await authClient.admin.updateUser({
       userId: item.id,
       data: {
         emailVerified: emailVerified,
@@ -302,17 +281,11 @@ function RowActions({ item }: { item: z.infer<typeof schema> }) {
             <FieldGroup>
               <Field>
                 <Label htmlFor="name-1">Tên</Label>
-                <Input id="name-1" defaultValue={name} disabled readOnly />
+                <Input id="name-1" defaultValue={item.name} disabled readOnly />
               </Field>
               <Field>
                 <Label htmlFor="email-1">Email</Label>
-                <Input
-                  id="email-1"
-                  name="email"
-                  defaultValue={email}
-                  disabled
-                  readOnly
-                />
+                <Input id="email-1" defaultValue={item.email} disabled readOnly />
               </Field>
               <Field>
                 <Label htmlFor="email-verified-1">Xác thực email</Label>
@@ -657,17 +630,19 @@ export function DataTable({
         }),
       ),
     );
-    const successful = results.filter((r) => r.status === "fulfilled");
-    const failed = results.filter((r) => r.status === "rejected");
+    const successful = results.filter(
+      (result) => result.status === "fulfilled" && !result.value.error,
+    ).length;
+    const failed = results.length - successful;
 
     toast.success(
-      `Đã ban thành công ${successful.length}/${selectedIds.length} người dùng`,
+      `Đã ban thành công ${successful}/${selectedIds.length} người dùng`,
     );
     queryClient.invalidateQueries({
       queryKey: ["users"],
     });
-    if (failed.length > 0) {
-      toast.error(`Thất bại ${failed.length} người dùng`);
+    if (failed > 0) {
+      toast.error(`Thất bại ${failed} người dùng`);
     }
   }
 
@@ -681,17 +656,19 @@ export function DataTable({
         }),
       ),
     );
-    const successful = results.filter((r) => r.status === "fulfilled");
-    const failed = results.filter((r) => r.status === "rejected");
+    const successful = results.filter(
+      (result) => result.status === "fulfilled" && !result.value.error,
+    ).length;
+    const failed = results.length - successful;
 
     queryClient.invalidateQueries({
       queryKey: ["users"],
     });
     toast.success(
-      `Đã unban thành công ${successful.length}/${selectedIds.length} người dùng`,
+      `Đã unban thành công ${successful}/${selectedIds.length} người dùng`,
     );
-    if (failed.length > 0) {
-      toast.error(`Thất bại ${failed.length} người dùng`);
+    if (failed > 0) {
+      toast.error(`Thất bại ${failed} người dùng`);
     }
   }
 
@@ -710,17 +687,19 @@ export function DataTable({
       }),
     );
 
-    const successful = results.filter((r) => r.status === "fulfilled");
-    const failed = results.filter((r) => r.status === "rejected");
+    const successful = results.filter(
+      (result) => result.status === "fulfilled" && !result.value.error,
+    ).length;
+    const failed = results.length - successful;
 
     queryClient.invalidateQueries({
       queryKey: ["users"],
     });
     toast.success(
-      `Đã cập nhật thành công ${successful.length}/${selectedIds.length} người dùng`,
+      `Đã cập nhật thành công ${successful}/${selectedIds.length} người dùng`,
     );
-    if (failed.length > 0) {
-      toast.error(`Thất bại ${failed.length} người dùng`);
+    if (failed > 0) {
+      toast.error(`Thất bại ${failed} người dùng`);
     }
   }
 
