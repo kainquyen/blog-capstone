@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DataTable } from "~/components/data-table";
+import { UsersTable } from "~/features/users";
 import { authClient } from "~/lib/auth/auth-client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -39,5 +39,5 @@ function UsersComponent() {
 
   if (error) return <div>Error: {error.message}</div>;
 
-  return <DataTable data={data ?? []} />;
+  return <UsersTable data={data ?? []} />;
 }
