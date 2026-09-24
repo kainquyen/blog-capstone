@@ -46,6 +46,7 @@ export type SignInProps = {
   className?: string
   socialLayout?: SocialLayout
   socialPosition?: "top" | "bottom"
+  redirectTo?: string
 }
 
 /**
@@ -54,12 +55,14 @@ export type SignInProps = {
  * @param className - Optional additional container class names
  * @param socialLayout - Layout style for social provider buttons
  * @param socialPosition - Position of social provider buttons; `"top"` or `"bottom"`. Defaults to `"bottom"`.
+ * @param redirectTo
  * @returns The rendered sign-in UI as a JSX element
  */
 export function SignIn({
   className,
   socialLayout,
-  socialPosition = "bottom"
+  socialPosition = "bottom",
+  redirectTo
 }: SignInProps) {
   const {
     authClient,
@@ -309,7 +312,7 @@ export function SignIn({
                   <div className="flex flex-col gap-3">
                     <form.AuthFormSubmitButton
                       isPending={signInEmailPending}
-                      className="relative overflow-visible"
+                      className="relative overflow-visible bg-white hover:bg-white/70 cursor-pointer"
                       disabled={isPending}
                     >
                       {localization.auth.signIn}
@@ -340,7 +343,7 @@ export function SignIn({
               )}
 
               {socialProviders && socialProviders.length > 0 && (
-                <ProviderButtons socialLayout={socialLayout} view="signIn" />
+                <ProviderButtons socialLayout={socialLayout} view="signIn"/>
               )}
             </>
           )}

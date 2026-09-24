@@ -120,13 +120,13 @@ function RootComponent() {
               ) : (
                 <>
                   <Link
-                    to="/login"
+                    to="/auth/sign-in"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Đăng nhập
                   </Link>
                   <Link
-                    to="/register"
+                    to="/auth/sign-up"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Đăng ký

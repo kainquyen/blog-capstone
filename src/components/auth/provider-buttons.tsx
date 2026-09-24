@@ -59,7 +59,7 @@ export function ProviderButtons({
                 ? "name"
                 : "icon"
           }
-          className={cn(resolvedSocialLayout === "horizontal" && "flex-1")}
+          className={cn("cursor-pointer", resolvedSocialLayout === "horizontal" && "flex-1")}
         />
       ))}
     </div>

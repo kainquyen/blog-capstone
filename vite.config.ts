@@ -9,8 +9,12 @@ export default defineConfig({
   server: { port: 3000 },
   plugins: [
     viteTsConfigPaths({ projects: ['./tsconfig.json'] }),
-    tanstackStart(),
-    netlify(),
+    tanstackStart({
+      serverFns: {
+        disableCsrfMiddlewareWarning: true
+      }
+    }),
+    // netlify(),
     viteReact(),
     tailwindcss(),
   ],
