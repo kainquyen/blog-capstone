@@ -65,7 +65,27 @@ export function ErrorToaster() {
       ) {
         return
       }
-      toast.error(err.error?.message || err.message)
+
+      const errorCode = err.error?.code
+      let message = err.error?.message || err.message
+
+      if (errorCode === "INVALID_EMAIL_OR_PASSWORD") {
+        message = "Email hoặc mật khẩu không chính xác!"
+      }
+
+      if (errorCode === "EMAIL_NOT_VERIFIED") {
+        message = "Vui lòng xác thực email trước khi đăng nhập!"
+      }
+
+      if (errorCode === "BANNED_USER") {
+        message = "Tài khoản đã bị khóa. Vui lòng liên hệ với đội ngũ hỗ trợ để biết đây là nhầm lẫn hoặc lỗi!"
+      }
+
+      if (errorCode === "Rate limit exceeded.") {
+        message = "Vui lòng thử lại sau!"
+      }
+
+      toast.error(message)
     }
 
     return () => {

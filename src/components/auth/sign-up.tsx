@@ -19,6 +19,7 @@ import {
 import { useIsMutating } from "@tanstack/react-query"
 import { Eye, EyeOff } from "lucide-react"
 import { useMemo, useState } from "react"
+import { useNavigate as useTanStackNavigate } from "@tanstack/react-router"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import {
   Field,
@@ -93,6 +94,8 @@ export function SignUp({
 
   const { fetchOptions, resetFetchOptions } = useFetchOptions()
 
+  const routerNavigate = useTanStackNavigate()
+
   const { mutateAsync: signUpEmail } = useSignUpEmail(authClient, {
     onError: (error) => {
       // The haveIBeenPwned plugin rejects on the password itself,
@@ -108,16 +111,17 @@ export function SignUp({
     onSuccess: (_data, { email }) => {
       if (emailAndPassword?.requireEmailVerification) {
         sessionStorage.setItem("better-auth-ui.verify-email", email)
-        navigate({
-          to: getAuthLinkURL(
-            `${basePaths.auth}/${viewPaths.auth.verifyEmail}`,
-            redirectTo
-          )
+        routerNavigate({
+          to: "/auth/verify-email",
+          search: {email}
         })
       } else if (onSignUpSuccess) {
         onSignUpSuccess()
       } else {
-        navigate({ to: redirectTo })
+        routerNavigate({
+          to: "/auth/verify-email",
+          search: {email}
+        })
       }
     }
   })

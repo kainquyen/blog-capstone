@@ -41,6 +41,7 @@ import { isAuthFormFieldInvalid, useAuthForm } from "./auth-form"
 import { LastUsedBadge } from "./last-login-method/last-used-badge"
 import { ProviderButtons, type SocialLayout } from "./provider-buttons"
 import { ReauthenticationNotice } from "./reauthentication"
+import { toast } from "sonner"
 
 export type SignInProps = {
   className?: string
@@ -85,10 +86,7 @@ export function SignIn({
         form.setFieldValue("password", "")
 
         if (error.error?.code === "EMAIL_NOT_VERIFIED") {
-          sessionStorage.setItem("better-auth-ui.verify-email", email)
-          navigate({
-            to: `${basePaths.auth}/${viewPaths.auth.verifyEmail}`
-          })
+          toast.warning("Vui lòng xác thực email trước khi đăng nhập!");
         }
 
         resetFetchOptions()
