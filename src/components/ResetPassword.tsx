@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 
 interface ResetPasswordFormProps {
   token: string;
@@ -49,21 +50,23 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
     setError(null);
     setIsSubmitting(true);
-    try {
-      await authClient.resetPassword({
-        newPassword: password,
-        token: token,
-      });
-      setIsSuccess(true);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Không thể đặt lại mật khẩu, vui lòng thử lại",
-      );
-    } finally {
+    const { data, error } = await authClient.resetPassword({
+      newPassword: password,
+      token: token
+    })
+
+    if (error) {
+      if (error?.code === "INVALID_TOKEN") {
+        toast.error("Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
+      } else {
+        toast.error("Không thể đặt lại mật khẩu. Vui lòng thử lại.");
+      }
       setIsSubmitting(false);
+      return;
     }
+    toast.success("Đặt lại mật khẩu thành công!")
+    setIsSubmitting(false);
+    setIsSuccess(true);
   };
 
   if (token === '') {
@@ -80,7 +83,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         </CardHeader>
         <CardFooter>
           <Button className="w-full cursor-pointer bg-foreground hover:bg-foreground/80">
-            <Link to="/forgot-password">Quên mật khẩu</Link>
+            <Link to="/auth/forgot-password">Quên mật khẩu</Link>
           </Button>
         </CardFooter>
       </Card>
@@ -101,7 +104,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         </CardHeader>
         <CardFooter>
           <Button className="w-full cursor-pointer bg-foreground hover:bg-foreground/80">
-            <Link to="/login">Về trang đăng nhập</Link>
+            <Link to="/auth/sign-in">Về trang đăng nhập</Link>
           </Button>
         </CardFooter>
       </Card>

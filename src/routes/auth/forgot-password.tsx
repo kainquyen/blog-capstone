@@ -16,7 +16,7 @@ import { authClient } from "~/lib/auth/auth-client";
 import { getSessionFn } from "~/lib/auth/session.functions";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/forgot-password")({
+export const Route = createFileRoute("/auth/forgot-password")({
   beforeLoad: async ({ location }) => {
     const session = await getSessionFn()
     if (session) throw redirect({ to: "/" })
@@ -35,7 +35,7 @@ function RouteComponent() {
     try {
       await authClient.requestPasswordReset({
         email,
-        redirectTo: "/reset-password",
+        redirectTo: "/auth/reset-password",
       });
       toast.success('Đã gửi link đặt lại mật khẩu vào email của bạn!');
     } catch (err) {

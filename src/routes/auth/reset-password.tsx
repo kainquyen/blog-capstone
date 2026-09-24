@@ -7,15 +7,15 @@ const searchSchema = z.object({
   token: z.string().optional().default(''),
 })
 
-export const Route = createFileRoute('/reset-password')({
+export const Route = createFileRoute('/auth/reset-password')({
   beforeLoad: async ({ location }) => {
     const session = await getSessionFn()
     if (session) throw redirect({ to: "/" })
   },
   validateSearch: searchSchema,
-  component: RouteComponent,
+  component: ResetPasswordComponent,
 })
-function RouteComponent() {
+function ResetPasswordComponent() {
   const { token } = Route.useSearch();
   return <ResetPasswordForm token={token} />
 }
