@@ -8,7 +8,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <AuthProvider
-      socialProviders={["google"]}
+      socialProviders={["google", "github"]}
       authClient={authClient}
       navigate={({ to, replace }) => navigate({ to, replace })}
       Link={({ href, ...props }) => <Link to={href} {...props} />}
