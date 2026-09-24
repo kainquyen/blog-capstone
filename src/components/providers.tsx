@@ -1,13 +1,14 @@
-import { Link, useNavigate } from "@tanstack/react-router"
-import type { ReactNode } from "react"
-import { authClient } from "~/lib/auth/auth-client"
-import { AuthProvider } from "./auth/auth-provider"
+import { Link, useNavigate } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { authClient } from "~/lib/auth/auth-client";
+import { AuthProvider } from "./auth/auth-provider";
 
 export function Providers({ children }: { children: ReactNode }) {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <AuthProvider
+      socialProviders={["google"]}
       authClient={authClient}
       navigate={({ to, replace }) => navigate({ to, replace })}
       Link={({ href, ...props }) => <Link to={href} {...props} />}
@@ -37,7 +38,8 @@ export function Providers({ children }: { children: ReactNode }) {
           updatePassword: "Cập nhật mật khẩu",
           changePasswordSuccess: "Đổi mật khẩu thành công",
           setPassword: "Thiết lập mật khẩu",
-          setPasswordDescription: "Bạn chưa có mật khẩu. Yêu cầu liên kết để tạo mật khẩu mới.",
+          setPasswordDescription:
+            "Bạn chưa có mật khẩu. Yêu cầu liên kết để tạo mật khẩu mới.",
           // --- Security: Quản lý phiên hoạt động ---
           activeSessions: "Phiên hoạt động",
           currentSession: "Phiên hiện tại",
@@ -45,13 +47,16 @@ export function Providers({ children }: { children: ReactNode }) {
           revokeSession: "Hủy phiên đăng nhập",
           revokeSessionSuccess: "Đã hủy phiên đăng nhập thành công",
           signOutOtherDevices: "Đăng xuất khỏi thiết bị khác",
-          signOutOtherDevicesDescription: "Hành động này sẽ đăng xuất bạn khỏi tất cả thiết bị ngoại trừ thiết bị này.",
-          signOutOtherDevicesSuccess: "Đã đăng xuất khỏi các thiết bị khác thành công",
+          signOutOtherDevicesDescription:
+            "Hành động này sẽ đăng xuất bạn khỏi tất cả thiết bị ngoại trừ thiết bị này.",
+          signOutOtherDevicesSuccess:
+            "Đã đăng xuất khỏi các thiết bị khác thành công",
           signOutEverywhere: "Đăng xuất khỏi tất cả thiết bị",
-          signOutEverywhereDescription: "Hành động này sẽ đăng xuất bạn khỏi thiết bị này và tất cả các thiết bị khác.",
+          signOutEverywhereDescription:
+            "Hành động này sẽ đăng xuất bạn khỏi thiết bị này và tất cả các thiết bị khác.",
           time: "Thời gian",
           active: "Đang hoạt động",
-          cancel: "Hủy"
+          cancel: "Hủy",
         },
         auth: {
           name: "Họ và tên",
@@ -69,11 +74,11 @@ export function Providers({ children }: { children: ReactNode }) {
           fieldRequired: "Trường này là bắt buộc",
           invalidEmail: "Địa chỉ email không hợp lệ",
           passwordsDoNotMatch: "Mật khẩu không khớp",
-          sendResetLink: "Gửi liên kết đặt lại mật khẩu"
-        }
+          sendResetLink: "Gửi liên kết đặt lại mật khẩu",
+        },
       }}
     >
       {children}
     </AuthProvider>
-  )
+  );
 }

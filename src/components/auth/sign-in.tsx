@@ -334,7 +334,7 @@ export function SignIn({
           {socialPosition === "bottom" && (
             <>
               {showSeparator && (
-                <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card text-xs flex items-center">
+                <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card text-xs flex items-center h-[2px]">
                   {localization.auth.or}
                 </FieldSeparator>
               )}

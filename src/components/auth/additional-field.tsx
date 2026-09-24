@@ -1,3 +1,5 @@
+"use client"
+
 import {
   type AdditionalField as AdditionalFieldConfig,
   type AdditionalFieldFormValue,
@@ -100,8 +102,10 @@ function CopyButton({
 }) {
   const { localization } = useAuth()
   const { copied, copy } = useCopyToClipboard({
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : String(error))
+    onError: (error) => {
+      console.error("[Better Auth UI] Copy failed", error)
+      toast.error(localization.errors.copyFailed)
+    }
   })
 
   async function handleCopy() {
