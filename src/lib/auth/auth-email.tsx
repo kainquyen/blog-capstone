@@ -23,12 +23,15 @@ export async function sendDeleteAccountVerification({
 export async function sendVerificationEmail({
     user,
     url,
+    token
 }: {
     user: { email: string }
     url: string
+    token: string
 }) {
+    const customUrlVerify = `${process.env.BETTER_AUTH_URL}/auth/reset-link-verify?token=${token}&email=${encodeURIComponent(user.email)}`
     const html = await render(
-        <EmailVerificationEmail url={url} email={user.email} expirationMinutes={60} poweredBy={false} appName="Blog Capstone" />,
+        <EmailVerificationEmail url={customUrlVerify} email={user.email} expirationMinutes={1} poweredBy={false} appName="Blog Capstone" />,
     )
     await sendEmail({
         to: user.email,
