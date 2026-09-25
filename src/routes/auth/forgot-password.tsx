@@ -1,6 +1,12 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { AlertCircle, ArrowLeft, KeyRound, RotateCw } from "lucide-react";
-import { useState } from "react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  KeyRound,
+  RotateCw,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -18,31 +24,55 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/forgot-password")({
   beforeLoad: async ({ location }) => {
-    const session = await getSessionFn()
-    if (session) throw redirect({ to: "/" })
+    const session = await getSessionFn();
+    if (session) throw redirect({ to: "/" });
   },
   component: RouteComponent,
 });
 
 function RouteComponent() {
   const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+  const [justResent, setJustResent] = useState(false);
+
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setSecondsLeft((s) => Math.max(0, s - 1));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [secondsLeft]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setIsSubmitting(true);
-    try {
-      await authClient.requestPasswordReset({
-        email,
-        redirectTo: "/auth/reset-password",
-      });
-      toast.success('Đã gửi link đặt lại mật khẩu vào email của bạn!');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsSubmitting(false);
+    setIsResending(true);
+
+    if (!email || email.trim() === "") {
+      setError("Bạn phải nhập email để gửi link đặt lại mật khẩu");
+      setIsResending(false);
+      return;
     }
+
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      redirectTo: "/auth/reset-password",
+    });
+    setJustResent(true);
+    setError("");
+    if (error) {
+      toast.error("Đã có lỗi xảy ra, vui lòng thử lại sau!");
+    } else {
+      toast.success("Đã gửi link đặt lại mật khẩu vào email của bạn!");
+    }
+
+    setSecondsLeft(60);
+    setIsResending(false);
+    setTimeout(() => setJustResent(false), 3000);
   }
   return (
     <Card className="w-[500px] absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -57,8 +87,8 @@ function RouteComponent() {
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2 text-left pb-5">
+        <CardContent className="flex flex-col ">
+          <div className="flex flex-col gap-2 text-left mb-3">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
               <Input
@@ -69,12 +99,12 @@ function RouteComponent() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
-                disabled={isSubmitting}
+                disabled={isResending}
               />
             </div>
           </div>
           {error && (
-            <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3 mb-3 text-sm text-destructive">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -82,17 +112,25 @@ function RouteComponent() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button
-            type="submit"
-            className="w-full cursor-pointer bg-foreground hover:bg-foreground/80"
-            disabled={isSubmitting || !email.trim()}
+            variant="outline"
+            className="w-full cursor-pointer"
+            disabled={secondsLeft > 0 || isResending}
+            onClick={handleSubmit}
           >
-            {isSubmitting ? (
+            {isResending ? (
               <>
-                <RotateCw className="mr-2 h-4 w-4 animate-spin" />
-                Đang gửi liên kết...
+                <RotateCw className="h-4 w-4 animate-spin" />
+                Đang gửi lại...
               </>
+            ) : justResent ? (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                Đã gửi lại email
+              </>
+            ) : secondsLeft > 0 ? (
+              `Gửi lại sau ${secondsLeft}s`
             ) : (
-              "Gửi liên kết đặt lại mật khẩu"
+              "Gửi lại email xác thực"
             )}
           </Button>
           <Button variant="ghost">

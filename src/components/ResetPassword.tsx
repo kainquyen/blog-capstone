@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { authClient } from "~/lib/auth/auth-client";
 import { CheckCircle2, Eye, EyeOff, KeyRound, AlertCircle } from "lucide-react";
 import { Button } from "~/components/ui/button";
@@ -28,14 +28,24 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+  const [justResent, setJustResent] = useState(false);
 
   const lengthOk = password.length >= minLength;
   const matchOk = password.length > 0 && password === confirmPassword;
   const canSubmit = lengthOk && matchOk && !isSubmitting;
 
   useEffect(() => {
-    console.log(token === '' ? 'empty' : 'not empty')
-  }, [])
+    if(secondsLeft <= 0) return
+
+    const timer = setInterval(() => {
+      setSecondsLeft((s) => Math.max(0, s - 1))
+    }, 1000)
+
+    return () => clearInterval(timer)
+
+  }, [secondsLeft])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,29 +57,33 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       setError("Hai mật khẩu không khớp nhau");
       return;
     }
-
+    setIsResending(true);
     setError(null);
     setIsSubmitting(true);
     const { data, error } = await authClient.resetPassword({
       newPassword: password,
-      token: token
-    })
+      token: token,
+    });
 
     if (error) {
+      setJustResent(true)
       if (error?.code === "INVALID_TOKEN") {
         toast.error("Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
       } else {
         toast.error("Không thể đặt lại mật khẩu. Vui lòng thử lại.");
       }
+      setSecondsLeft(60)
+      setIsResending(false)
+      setTimeout(() => setJustResent(false), 3000)
       setIsSubmitting(false);
       return;
     }
-    toast.success("Đặt lại mật khẩu thành công!")
+    toast.success("Đặt lại mật khẩu thành công!");
     setIsSubmitting(false);
     setIsSuccess(true);
   };
 
-  if (token === '') {
+  if (token === "") {
     return (
       <Card className="w-full max-w-sm absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
         <CardHeader className="flex flex-col items-center text-center">
@@ -78,7 +92,8 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           </div>
           <CardTitle>Mã đặt lại mật khẩu đã hết hạn</CardTitle>
           <CardDescription>
-            Vui lòng thực hiện lại thao tác quên mật khẩu để được gửi lại mã mới.
+            Vui lòng thực hiện lại thao tác quên mật khẩu để được gửi lại mã
+            mới.
           </CardDescription>
         </CardHeader>
         <CardFooter>
@@ -173,9 +188,14 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         </CardContent>
 
         <CardFooter>
-          <Button type="submit" className="w-full cursor-pointer bg-foreground hover:bg-foreground/80" disabled={!canSubmit}>
+          <Button
+            type="submit"
+            className="w-full cursor-pointer bg-foreground hover:bg-foreground/80"
+            disabled={!canSubmit}
+          >
             {isSubmitting ? "Đang xử lý..." : "Đặt lại mật khẩu"}
           </Button>
+          
         </CardFooter>
       </form>
     </Card>

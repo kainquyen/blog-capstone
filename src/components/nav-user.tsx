@@ -53,7 +53,7 @@ export function NavUser({
       fetchOptions: {
         onSuccess: () => {
           toast.success("Đăng xuất thành công!");
-          router.navigate({ to: "/login" });
+          router.navigate({ to: "/auth/sign-in" });
         },
       },
     });
