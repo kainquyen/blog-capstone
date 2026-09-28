@@ -7,6 +7,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { tiptapExtensions } from "~/lib/tiptap/extensions";
 import { TableOfContents } from "@tiptap/extension-table-of-contents";
 import type { TableOfContentsStorage } from "@tiptap/extension-table-of-contents";
+import { PostActions } from "~/components/PostActions";
 
 // --- Tiptap styles ---
 import "~/components/tiptap-node/blockquote-node/blockquote-node.scss";
@@ -18,8 +19,6 @@ import "~/components/tiptap-node/heading-node/heading-node.scss";
 import "~/components/tiptap-node/paragraph-node/paragraph-node.scss";
 import "~/components/tiptap-templates/simple/simple-editor.scss";
 
-
-
 export function PostLayout({
   post,
   onBack,
@@ -28,7 +27,9 @@ export function PostLayout({
   onBack?: () => void;
 }) {
   const [tocOpen, setTocOpen] = useState(false);
-  const [tocItems, setTocItems] = useState<TableOfContentsStorage["content"]>([]);
+  const [tocItems, setTocItems] = useState<TableOfContentsStorage["content"]>(
+    [],
+  );
 
   const { theme } = useTheme();
 
@@ -101,24 +102,27 @@ export function PostLayout({
           <EditorContent editor={editor} />
         </article>
 
-        <nav
-          className="sticky top-24 hidden md:grid gap-2 py-3 pl-4 border-l border-border font-semibold text-sm text-muted-foreground"
-          aria-label="Mục lục"
-        >
-          <p className="uppercase text-[11px] tracking-wider text-muted-foreground mb-2">
-            Trong bài
-          </p>
-          {tocItems.map((item) => (
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              style={{ paddingLeft: `${(item.level - 1) * 12}px` }}
-              className="hover:text-primary transition-colors block"
-            >
-              {item.textContent}
-            </a>
-          ))}
-        </nav>
+        <div className="sticky top-24">
+          <PostActions />
+          <nav
+            className="grid gap-2 mt-6 py-3 pl-4 border-l border-border font-semibold text-sm text-muted-foreground"
+            aria-label="Mục lục"
+          >
+            <p className="uppercase text-[11px] tracking-wider text-muted-foreground mb-2">
+              Trong bài
+            </p>
+            {tocItems.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                style={{ paddingLeft: `${(item.level - 1) * 12}px` }}
+                className="hover:text-primary transition-colors block"
+              >
+                {item.textContent}
+              </a>
+            ))}
+          </nav>
+        </div>
       </div>
     </main>
   );

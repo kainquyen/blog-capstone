@@ -14,7 +14,7 @@ export default defineConfig({
         disableCsrfMiddlewareWarning: true
       }
     }),
-    // netlify(),
+    netlify(),
     viteReact(),
     tailwindcss(),
   ],
