@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, boolean, jsonb } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, uuid, boolean, jsonb, primaryKey, index } from 'drizzle-orm/pg-core'
 import { user } from './auth-schema'
 
 // ============================================================
@@ -33,16 +33,20 @@ export const topics = pgTable('topics', {
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-export const bookmark = pgTable('bookmark', {
-    id: uuid('id').primaryKey().defaultRandom(),
+export const bookmarks = pgTable('bookmarks', {
     userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
-    postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+    postId: uuid('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
-})
+}, (t) => [
+    primaryKey({ columns: [t.userId, t.postId]}),
+    index('bookmarks_post_id_idx').on(t.postId),
+])
 
-export const like = pgTable('like', {
-    id: uuid('id').primaryKey().defaultRandom(),
+export const likes = pgTable('likes', {
     userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
-    postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+    postId: uuid('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
-})
+}, (t) => [
+    primaryKey({ columns: [t.userId, t.postId]}),
+    index('likes_post_id_idx').on(t.postId),
+])

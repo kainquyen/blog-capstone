@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getPostBySlug, isBookmarked } from "~/server/posts";
+import { getPostBySlug } from "~/server/posts";
 import { PostLayout } from "~/components/PostLayout";
 
 export const Route = createFileRoute("/posts/$slug")({
   loader: async ({ params, context }) => {
-    const { post } = await getPostBySlug({ data: params.slug });
+    const { post } = await getPostBySlug({
+      data: {
+        slug: params.slug,
+        userId: context.session?.user.id,
+      },
+    });
 
-    let bookmarked = false;
-    if (context.session?.user?.id) {
-      bookmarked = await isBookmarked({ data: post.id });
-    }
-    return { post, bookmarked };
+    return {
+      post,
+    };
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -26,8 +29,7 @@ export const Route = createFileRoute("/posts/$slug")({
 });
 
 function PostDetail() {
-  const { post, bookmarked }: { post: any; bookmarked: boolean } =
-    Route.useLoaderData();
+  const { post }: { post: any } = Route.useLoaderData();
 
-  return <PostLayout post={post} bookmarked={bookmarked} />;
+  return <PostLayout post={post} />;
 }

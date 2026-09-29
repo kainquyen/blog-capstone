@@ -21,11 +21,9 @@ import "~/components/tiptap-templates/simple/simple-editor.scss";
 
 export function PostLayout({
   post,
-  bookmarked,
   onBack,
 }: {
   post: Post;
-  bookmarked: boolean;
   onBack?: () => void;
 }) {
   const [tocOpen, setTocOpen] = useState(false);
@@ -105,7 +103,7 @@ export function PostLayout({
         </article>
 
         <div className="sticky top-24">
-          <PostActions postId={post.id} bookmarked={bookmarked}/>
+          <PostActions />
           <nav
             className="grid gap-2 mt-6 py-3 pl-4 border-l border-border font-semibold text-sm text-muted-foreground"
             aria-label="Mục lục"

@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import type { JSONContent } from "@tiptap/core";
 import { generateHTML } from "@tiptap/html";
 import { getDb } from "~/lib/db/client";
-import { posts, topics, bookmark, user } from "~/lib/db/schema";
+import { posts, topics, bookmarks, user, likes } from "~/lib/db/schema";
 import { authMiddleware } from "~/server/auth-middleware";
 import { tiptapExtensions } from "~/lib/tiptap/extensions";
 import { slugify } from "~/lib/slugify";
@@ -24,12 +24,11 @@ const postFieldsSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
-export const getTopics = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const db = getDb();
-    return db.select().from(topics);
-  });
-  
+export const getTopics = createServerFn({ method: "GET" }).handler(async () => {
+  const db = getDb();
+  return db.select().from(topics);
+});
+
 export const getTopicByName = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .validator(z.string().min(1))
@@ -164,12 +163,12 @@ export const deletePost = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-
 export const getPostBySlug = createServerFn({ method: "GET" })
-  .validator((slug: string) => slug)
-  .handler(async ({ data: slug }) => {
+  .validator((data: {slug: string; userId?: string}) => data)
+  .handler(async ({ data: { slug, userId } }) => {
     const db = getDb();
-    const [result] = await db
+
+    const [post] = await db
       .select({
         id: posts.id,
         topic: posts.topic,
@@ -186,57 +185,77 @@ export const getPostBySlug = createServerFn({ method: "GET" })
         updatedAt: posts.updatedAt,
         name: user.name,
         email: user.email,
+        likesCount: sql<number>`(SELECT count(*) FROM likes where likes.post_id = ${posts.id})`,
+        isLiked: userId ? sql<boolean>`EXISTS (SELECT 1 FROM likes where likes.post_id = ${posts.id} AND likes.user_id = ${userId})` : sql<boolean>`false`,
+        isBookmarked: userId ? sql<boolean>`EXISTS (SELECT 1 FROM bookmarks where bookmarks.post_id = ${posts.id} AND bookmarks.user_id = ${userId})` : sql<boolean>`false`,
       })
       .from(posts)
       .leftJoin(user, eq(posts.authorId, user.id))
       .where(eq(posts.slug, slug));
 
-    if (!result || !result.published) throw notFound();
+    if (!post || !post.published) throw notFound();
 
-    return { post: result };
+    return { post };
   });
 
 export const bookmarkPost = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((id: string) => id)
-  .handler(async ({ data: id, context }) => {
+  .validator((postId: string) => postId)
+  .handler(async ({ data: postId, context }) => {
     const db = getDb();
-    const [post] = await db
-      .select()
-      .from(posts)
-      .where(eq(posts.id, id))
-      .limit(1);
-    if (!post) throw new Error("Post not found");
-    const [existingBookmark] = await db
-      .select()
-      .from(bookmark)
-      .where(
-        and(
-          eq(bookmark.userId, context.session.user.id),
-          eq(bookmark.postId, id)
-        )
-      )
-      .limit(1);
+    const userId = context.session.user.id;
 
-    if (existingBookmark) {
+    const deleted = await db
+      .delete(bookmarks)
+      .where(and(eq(bookmarks.postId, postId), eq(bookmarks.userId, userId)))
+      .returning();
+
+    const isBookmarkedNow = deleted.length === 0;
+
+    if (isBookmarkedNow) {
       await db
-        .delete(bookmark)
-        .where(
-          and(
-            eq(bookmark.userId, context.session.user.id),
-            eq(bookmark.postId, id)
-          )
-        );
-      return { success: true, bookmarked: false };
-    } else {
-      await db
-        .insert(bookmark)
-        .values({
-          postId: id,
-          userId: context.session.user.id,
-        });
-      return { success: true, bookmarked: true };
+        .insert(bookmarks)
+        .values({ postId: postId, userId: userId })
+        .onConflictDoNothing();
     }
+
+    return {
+      success: true,
+      bookmarked: isBookmarkedNow,
+    };
+  });
+
+export const likePost = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((postId: string) => postId)
+  .handler(async ({ data: postId, context }) => {
+    const db = getDb();
+    const userId = context.session.user.id;
+
+    const deleted = await db
+      .delete(likes)
+      .where(and(eq(likes.postId, postId), eq(likes.userId, userId)))
+      .returning();
+
+    const isLikedNow = deleted.length === 0;
+
+    if (isLikedNow) {
+      await db
+        .insert(likes)
+        .values({ postId: postId, userId: userId })
+        .onConflictDoNothing();
+    }
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(likes)
+      .where(eq(likes.postId, postId));
+
+    return {
+      success: true,
+      liked: isLikedNow,
+      likesCount: Number(count ?? 0),
+    };
   });
 
 export const isBookmarked = createServerFn({ method: "GET" })
@@ -244,15 +263,12 @@ export const isBookmarked = createServerFn({ method: "GET" })
   .validator((postId: string) => postId)
   .handler(async ({ data: postId, context }) => {
     const db = getDb();
+    const userId = context.session.user.id;
+
     const [existingBookmark] = await db
       .select()
-      .from(bookmark)
-      .where(
-        and(
-          eq(bookmark.userId, context.session.user.id),
-          eq(bookmark.postId, postId)
-        )
-      )
+      .from(bookmarks)
+      .where(and(eq(bookmarks.userId, userId), eq(bookmarks.postId, postId)))
       .limit(1);
 
     if (!existingBookmark) {
@@ -260,4 +276,35 @@ export const isBookmarked = createServerFn({ method: "GET" })
     }
     return true;
   });
-  
+
+export const isLiked = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .validator((postId: string) => postId)
+  .handler(async ({ data: postId, context }) => {
+    const db = getDb();
+    const userId = context.session.user.id;
+
+    const [existingLike] = await db
+      .select()
+      .from(likes)
+      .where(and(eq(likes.userId, userId), eq(likes.postId, postId)))
+      .limit(1);
+
+    if (!existingLike) {
+      return false;
+    }
+    return true;
+  });
+
+export const getLikesCount = createServerFn({ method: "GET" })
+  .validator((postId: string) => postId)
+  .handler(async ({ data: postId }) => {
+    const db = getDb();
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(likes)
+      .where(eq(likes.postId, postId));
+
+    return count ? Number(count) : 0;
+  });
