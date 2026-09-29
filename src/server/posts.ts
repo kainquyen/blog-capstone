@@ -1,13 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import type { JSONContent } from "@tiptap/core";
 import { generateHTML } from "@tiptap/html";
 import { getDb } from "~/lib/db/client";
-import { posts, topics } from "~/lib/db/schema";
+import { posts, topics, bookmark, user } from "~/lib/db/schema";
 import { authMiddleware } from "~/server/auth-middleware";
 import { tiptapExtensions } from "~/lib/tiptap/extensions";
 import { slugify } from "~/lib/slugify";
+import { notFound } from "@tanstack/react-router";
 
 // Shared Zod schema for post fields (reused by createPost & updatePost)
 const postFieldsSchema = z.object({
@@ -162,3 +163,101 @@ export const deletePost = createServerFn({ method: "POST" })
     await db.delete(posts).where(eq(posts.id, id));
     return { success: true };
   });
+
+
+export const getPostBySlug = createServerFn({ method: "GET" })
+  .validator((slug: string) => slug)
+  .handler(async ({ data: slug }) => {
+    const db = getDb();
+    const [result] = await db
+      .select({
+        id: posts.id,
+        topic: posts.topic,
+        readTime: posts.readTime,
+        tags: posts.tags,
+        title: posts.title,
+        slug: posts.slug,
+        excerpt: posts.excerpt,
+        contentHtml: posts.contentHtml,
+        content: posts.content,
+        published: posts.published,
+        authorId: posts.authorId,
+        createdAt: posts.createdAt,
+        updatedAt: posts.updatedAt,
+        name: user.name,
+        email: user.email,
+      })
+      .from(posts)
+      .leftJoin(user, eq(posts.authorId, user.id))
+      .where(eq(posts.slug, slug));
+
+    if (!result || !result.published) throw notFound();
+
+    return { post: result };
+  });
+
+export const bookmarkPost = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((id: string) => id)
+  .handler(async ({ data: id, context }) => {
+    const db = getDb();
+    const [post] = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, id))
+      .limit(1);
+    if (!post) throw new Error("Post not found");
+    const [existingBookmark] = await db
+      .select()
+      .from(bookmark)
+      .where(
+        and(
+          eq(bookmark.userId, context.session.user.id),
+          eq(bookmark.postId, id)
+        )
+      )
+      .limit(1);
+
+    if (existingBookmark) {
+      await db
+        .delete(bookmark)
+        .where(
+          and(
+            eq(bookmark.userId, context.session.user.id),
+            eq(bookmark.postId, id)
+          )
+        );
+      return { success: true, bookmarked: false };
+    } else {
+      await db
+        .insert(bookmark)
+        .values({
+          postId: id,
+          userId: context.session.user.id,
+        });
+      return { success: true, bookmarked: true };
+    }
+  });
+
+export const isBookmarked = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .validator((postId: string) => postId)
+  .handler(async ({ data: postId, context }) => {
+    const db = getDb();
+    const [existingBookmark] = await db
+      .select()
+      .from(bookmark)
+      .where(
+        and(
+          eq(bookmark.userId, context.session.user.id),
+          eq(bookmark.postId, postId)
+        )
+      )
+      .limit(1);
+
+    if (!existingBookmark) {
+      return false;
+    }
+    return true;
+  });
+  
