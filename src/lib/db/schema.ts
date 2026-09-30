@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, boolean, jsonb, primaryKey, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, uuid, boolean, jsonb, primaryKey, index, date, integer } from 'drizzle-orm/pg-core'
 import { user } from './auth-schema'
 
 // ============================================================
@@ -50,3 +50,9 @@ export const likes = pgTable('likes', {
     primaryKey({ columns: [t.userId, t.postId]}),
     index('likes_post_id_idx').on(t.postId),
 ])
+
+export const dailyAnalytics = pgTable("daily_analytics", {
+  date: date("date").primaryKey(),
+  desktop: integer("desktop").default(0).notNull(),
+  mobile: integer("mobile").default(0).notNull(),
+});

@@ -4,6 +4,7 @@ import {
   Link,
   Outlet,
   Scripts,
+  useLocation,
   useRouter,
   useRouterState,
 } from "@tanstack/react-router";
@@ -18,14 +19,7 @@ import { Toaster } from "~/components/ui/sonner";
 import { toast } from "sonner";
 import { RouterProgressBar } from "~/components/router-progress-bar";
 import { Providers } from "~/components/providers";
-import {
-  CreditCardIcon,
-  LayoutDashboard,
-  LogOutIcon,
-  SettingsIcon,
-  UserIcon,
-} from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { LayoutDashboard, LogOutIcon, SettingsIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +27,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import {
+  Avatar,
+  AvatarBadge,
+  AvatarFallback,
+  AvatarImage,
+} from "~/components/ui/avatar";
+import { useEffect, useState } from "react";
+import { trackVisit } from "~/server/track-visit";
+import { Button } from "~/components/ui/button";
 export const Route = createRootRoute({
   beforeLoad: async () => {
     const session = await getSessionFn();
@@ -59,11 +61,15 @@ export const Route = createRootRoute({
 function RootComponent() {
   const router = useRouter();
   const { session } = Route.useRouteContext();
-
   const pathname = useRouterState({
     select: (s) => (s.resolvedLocation ?? s.location).pathname,
   });
   const isDashboard = pathname.startsWith("/dashboard");
+  const location = useLocation();
+
+  useEffect(() => {
+    trackVisit().catch((err) => console.error("Track visit error:", err));
+  }, [location.pathname]);
 
   async function handleSignOut() {
     await authClient.signOut({
@@ -127,16 +133,21 @@ function RootComponent() {
                       <DropdownMenuTrigger
                         className="cursor-pointer"
                         render={
-                          <Avatar>
-                            <AvatarImage
-                              src={session.user.image ?? "https://github.com/shadcn.png"}
-                              alt={session.user.name}
-                            />
-                            <AvatarFallback>
-                              {session.user.name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                            <AvatarBadge className="bg-green-600 dark:bg-green-500" />
-                          </Avatar>
+                          <Button variant="ghost" className="rounded-full p-0">
+                            <Avatar>
+                              <AvatarImage
+                                src={
+                                  session.user.image ??
+                                  "https://github.com/shadcn.png"
+                                }
+                                alt={session.user.name}
+                              />
+                              <AvatarFallback>
+                                {session.user.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                              <AvatarBadge className="bg-green-600 dark:bg-green-500" />
+                            </Avatar>
+                          </Button>
                         }
                       />
                       <DropdownMenuContent>
@@ -149,7 +160,11 @@ function RootComponent() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="cursor-pointer"
-                          onClick={() => router.navigate({ to: "/dashboard/settings-account" })}
+                          onClick={() =>
+                            router.navigate({
+                              to: "/dashboard/settings-account",
+                            })
+                          }
                         >
                           <SettingsIcon />
                           Cài đặt
