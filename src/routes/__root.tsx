@@ -19,7 +19,9 @@ import { Toaster } from "~/components/ui/sonner";
 import { toast } from "sonner";
 import { RouterProgressBar } from "~/components/router-progress-bar";
 import { Providers } from "~/components/providers";
-import { LayoutDashboard, LogOutIcon, SettingsIcon } from "lucide-react";
+import { LayoutDashboard, LogOutIcon, SettingsIcon, SquarePen } from "lucide-react";
+import { cn } from "cn";
+import { Button, buttonVariants } from "~/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +37,6 @@ import {
 } from "~/components/ui/avatar";
 import { useEffect, useState } from "react";
 import { trackVisit } from "~/server/track-visit";
-import { Button } from "~/components/ui/button";
 export const Route = createRootRoute({
   beforeLoad: async () => {
     const session = await getSessionFn();
@@ -125,10 +126,21 @@ function RootComponent() {
                 </li>
               </ul>
 
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-3 text-sm">
                 <ModeToggle />
                 {session ? (
                   <>
+                    <Link
+                      to="/dashboard/posts"
+                      className={cn(
+                        buttonVariants({ variant: "default", size: "sm" }),
+                        "gap-1.5 font-medium rounded-full shadow-xs cursor-pointer text-xs sm:text-sm"
+                      )}
+                    >
+                      <SquarePen className="size-4" />
+                      <span>Viết bài</span>
+                    </Link>
+
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         className="cursor-pointer"
