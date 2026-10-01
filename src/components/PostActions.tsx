@@ -1,4 +1,4 @@
-import { BookmarkIcon, Heart, Share2 } from "lucide-react";
+import { BookmarkIcon, Heart, Share2, MessageSquare } from "lucide-react";
 import { useLoaderData, useLocation, useRouter } from "@tanstack/react-router";
 import { bookmarkPost, likePost } from "~/server/posts";
 import { Button } from "~/components/ui/button";
@@ -165,6 +165,31 @@ export function PostActions() {
           <TooltipContent>
             {isBookmarked ? "Bỏ lưu bài viết" : "Lưu bài viết"}
           </TooltipContent>
+        </Tooltip>
+
+        <div className="h-4 w-px bg-border my-auto" />
+
+        {/* Nút Cuộn tới Bình luận */}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const commentsEl = document.getElementById("comments");
+                  if (commentsEl) {
+                    commentsEl.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className="h-9 w-9 p-0 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+              >
+                <MessageSquare size={18} />
+              </Button>
+            }
+          />
+          <TooltipContent>Bình luận</TooltipContent>
         </Tooltip>
 
         {/* Nút Share Dropdown */}

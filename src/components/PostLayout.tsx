@@ -8,6 +8,7 @@ import { tiptapExtensions } from "~/lib/tiptap/extensions";
 import { TableOfContents } from "@tiptap/extension-table-of-contents";
 import type { TableOfContentsStorage } from "@tiptap/extension-table-of-contents";
 import { PostActions } from "~/components/PostActions";
+import { CommentsSection } from "~/components/comments/CommentsSection";
 
 // --- Tiptap styles ---
 import "~/components/tiptap-node/blockquote-node/blockquote-node.scss";
@@ -100,6 +101,7 @@ export function PostLayout({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-7 items-start">
         <article className="col-span-2 raw-post-content">
           <EditorContent editor={editor} />
+          <CommentsSection postId={post.id} postAuthorId={post.authorId} />
         </article>
 
         <div className="sticky top-24">
