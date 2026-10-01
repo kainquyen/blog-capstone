@@ -56,3 +56,13 @@ export const dailyAnalytics = pgTable("daily_analytics", {
   desktop: integer("desktop").default(0).notNull(),
   mobile: integer("mobile").default(0).notNull(),
 });
+
+export const comments = pgTable('comments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  postId: uuid('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+  authorId: text('author_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  parentId: uuid('parent_id'), // Hỗ trợ Reply lồng nhau (Nested comments)
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})

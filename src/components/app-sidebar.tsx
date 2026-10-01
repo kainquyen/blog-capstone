@@ -41,8 +41,8 @@ const data = {
     },
     {
       title: "Analytics",
-      url: "#",
       icon: <ChartBarIcon />,
+      url: "/dashboard/analytics"
     },
     {
       title: "Projects",
