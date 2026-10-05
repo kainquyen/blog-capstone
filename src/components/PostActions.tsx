@@ -30,7 +30,7 @@ function formatCompactNumber(number: number) {
 
 export function PostActions() {
   const router = useRouter();
-  const {post } = useLoaderData({from: "/posts/$slug"})
+  const { post } = useLoaderData({from: "/posts/$slug"})
   const postId = post.id
   const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked);
   const [isLiked, setIsLiked] = useState(post.isLiked);

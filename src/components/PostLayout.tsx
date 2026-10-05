@@ -125,11 +125,11 @@ export function PostLayout({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-7 items-start">
         <article className="col-span-2 raw-post-content">
           <EditorContent editor={editor} />
-          <CommentsSection postId={post.id} postAuthorId={post.authorId} />
+          {post.published && <CommentsSection postId={post.id} postAuthorId={post.authorId} />}
         </article>
 
         <div className="sticky top-24">
-          <PostActions />
+          {post.published ?? <PostActions />}
           <nav
             className="grid gap-2 mt-6 py-3 pl-4 border-l border-border font-semibold text-sm text-muted-foreground"
             aria-label="Mục lục"
