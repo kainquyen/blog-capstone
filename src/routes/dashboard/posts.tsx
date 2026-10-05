@@ -65,7 +65,7 @@ function AdminPostsPage() {
     handleEditLoad,
     handleTogglePublish,
     handleDelete,
-    handlePreview
+    handlePreview,
   } = usePostForm(initialPosts);
 
   return (
@@ -89,56 +89,64 @@ function AdminPostsPage() {
             </div>
             <div className="flex gap-2">
               <Tooltip>
-                <TooltipTrigger>
-                  <Button
-                    variant="outline"
-                    className="cursor-pointer rounded px-2 py-1 text-sm"
-                    onClick={() => handleEditLoad(p.id)}
-                  >
-                    <Pen size={14} />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer rounded px-2 py-1 text-sm"
+                      onClick={() => handleEditLoad(p.id)}
+                    >
+                      <Pen size={14} />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Sửa bài viết</TooltipContent>
               </Tooltip>
               <Tooltip>
-                <TooltipTrigger>
-                  <Button
-                    variant="outline"
-                    className="cursor-pointer rounded px-2 py-1 text-sm"
-                    onClick={() => handleTogglePublish(p.id)}
-                  >
-                    {p.published ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer rounded px-2 py-1 text-sm"
+                      onClick={() => handleTogglePublish(p.id)}
+                    >
+                      {p.published ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>
                   {p.published ? "Ẩn bài viết" : "Đăng bài viết"}
                 </TooltipContent>
               </Tooltip>
               {!p.published && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <Button
-                      variant="outline"
-                      className="cursor-pointer rounded px-2 py-1 text-sm"
-                      onClick={() => handlePreview(p.slug)}
-                    >
-                      <MoveUpRight size={14} />
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        className="cursor-pointer rounded px-2 py-1 text-sm"
+                        onClick={() => handlePreview(p.slug)}
+                      >
+                        <MoveUpRight size={14} />
+                      </Button>
+                    }
+                  ></TooltipTrigger>
                   <TooltipContent>Xem trước bài viết</TooltipContent>
                 </Tooltip>
               )}
 
               <Tooltip>
-                <TooltipTrigger>
-                  <Button
-                    variant="outline"
-                    className="cursor-pointer rounded px-2 py-1 text-sm"
-                    onClick={() => handleDelete(p.id)}
-                  >
-                    <Trash2 size={14} color="red" />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer rounded px-2 py-1 text-sm"
+                      onClick={() => handleDelete(p.id)}
+                    >
+                      <Trash2 size={14} color="red" />
+                    </Button>
+                  }
+                ></TooltipTrigger>
                 <TooltipContent>Xoá bài viết</TooltipContent>
               </Tooltip>
             </div>
