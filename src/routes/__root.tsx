@@ -37,6 +37,7 @@ import {
 } from "~/components/ui/avatar";
 import { useEffect, useState } from "react";
 import { trackVisit } from "~/server/track-visit";
+import { BackToTop } from "~/components/BackToTop";
 export const Route = createRootRoute({
   beforeLoad: async () => {
     const session = await getSessionFn();
@@ -142,7 +143,7 @@ function RootComponent() {
                     </Link>
 
                     <DropdownMenu>
-                      <DropdownMenuTrigger
+                      <DropdownMenuTrigger  
                         className="cursor-pointer"
                         render={
                           <Button variant="ghost" className="rounded-full p-0">
@@ -213,6 +214,7 @@ function RootComponent() {
             </nav>
           )}
           <Outlet />
+          <BackToTop />
         </Providers>
       </ThemeProvider>
     </RootDocument>
