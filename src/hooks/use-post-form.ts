@@ -12,6 +12,7 @@ import {
   getTopicByName,
 } from "~/server/posts";
 import { posts } from "~/lib/db/schema";
+import { toast } from "sonner";
 
 // Typed alias for a post row — jsonb columns (content) come back as `unknown`
 // from Drizzle; we narrow them here so handlers can access fields safely.
@@ -45,8 +46,6 @@ export function usePostForm(initialPosts: Post[]) {
   const [postList, setPostList] = useState(initialPosts);
   const [form, setForm] = useState<PostFormState>(defaultFormState);
   const [isEdit, setIsEdit] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   function setField<K extends keyof PostFormState>(
     key: K,
@@ -67,9 +66,8 @@ export function usePostForm(initialPosts: Post[]) {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    if (!form.content) {
-      setError("Vui lòng nhập nội dung bài viết");
+    if (form.content && form.content.content.length === 1) {
+      toast.error("Vui lòng nhập nội dung bài viết");
       return;
     }
     try {
@@ -83,17 +81,17 @@ export function usePostForm(initialPosts: Post[]) {
           tags: form.tags,
         },
       });
-      setSuccessMessage("Đã tạo bài viết (dạng nháp)");
+      toast.success("Đã tạo bài viết (dạng nháp)");
       resetForm();
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      console.log(err instanceof Error ? err.message : String(err))
+      toast.error("Đã xảy ra lỗi, vui lòng thử lại sau.");
     }
   }
 
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     try {
       await updatePost({
         data: {
@@ -106,10 +104,11 @@ export function usePostForm(initialPosts: Post[]) {
           tags: form.tags,
         },
       });
-      setSuccessMessage("Đã chỉnh sửa bài viết");
+      toast.success("Đã chỉnh sửa bài viết");
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      console.log(err instanceof Error ? err.message : String(err))
+      toast.error("Đã xảy ra lỗi, vui lòng thử lại sau.");
     }
   }
 
@@ -127,7 +126,8 @@ export function usePostForm(initialPosts: Post[]) {
       });
       setIsEdit(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      console.log(err instanceof Error ? err.message : String(err));
+      toast.error("Đã xảy ra lỗi, vui lòng thử lại sau.");
     }
   }
 
@@ -136,7 +136,8 @@ export function usePostForm(initialPosts: Post[]) {
       await togglePublish({ data: id });
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      console.log(err instanceof Error ? err.message : String(err));
+      toast.error("Đã xảy ra lỗi, vui lòng thử lại sau.");
     }
   }
 
@@ -145,7 +146,8 @@ export function usePostForm(initialPosts: Post[]) {
       await deletePost({ data: id });
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      console.log(err instanceof Error ? err.message : String(err));
+      toast.error("Đã xảy ra lỗi, vui lòng thử lại sau.");
     }
   }
 
@@ -161,8 +163,6 @@ export function usePostForm(initialPosts: Post[]) {
     form,
     setField,
     isEdit,
-    error,
-    successMessage,
     handleCreate,
     handleUpdate,
     handleEditLoad,

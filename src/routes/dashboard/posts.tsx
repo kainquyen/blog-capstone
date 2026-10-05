@@ -2,7 +2,7 @@ import { createFileRoute, ErrorComponent, Link } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import type { InferSelectModel } from "drizzle-orm";
 import type { JSONContent } from "@tiptap/core";
-import { Trash2, Eye, EyeOff, Pen, MoveUpRight } from "lucide-react";
+import { Trash2, Eye, EyeOff, Pen, MoveUpRight, BookOpen, Book } from "lucide-react";
 import { SimpleEditor } from "~/components/tiptap-templates/simple/simple-editor";
 import { posts } from "~/lib/db/schema";
 import { getMyPosts, getTopics } from "~/server/posts";
@@ -58,8 +58,6 @@ function AdminPostsPage() {
     form,
     setField,
     isEdit,
-    error,
-    successMessage,
     handleCreate,
     handleUpdate,
     handleEditLoad,
@@ -71,9 +69,6 @@ function AdminPostsPage() {
   return (
     <div className="space-y-8 w-full max-w-[1184px] mx-auto px-4 md:px-7 flex-1 py-6">
       <h1 className="text-2xl font-bold">Quản lý bài viết của tôi</h1>
-
-      {successMessage && <p className="text-green-600">{successMessage}</p>}
-      {error && <p className="text-red-600">{error}</p>}
 
       <ul className="space-y-3">
         {postList.map((p) => (
@@ -110,7 +105,7 @@ function AdminPostsPage() {
                       className="cursor-pointer rounded px-2 py-1 text-sm"
                       onClick={() => handleTogglePublish(p.id)}
                     >
-                      {p.published ? <EyeOff size={14} /> : <Eye size={14} />}
+                      {p.published ? <Book size={14} /> : <BookOpen size={14} />}
                     </Button>
                   }
                 ></TooltipTrigger>
@@ -127,7 +122,7 @@ function AdminPostsPage() {
                         className="cursor-pointer rounded px-2 py-1 text-sm"
                         onClick={() => handlePreview(p.slug)}
                       >
-                        <MoveUpRight size={14} />
+                        <Eye size={14} />
                       </Button>
                     }
                   ></TooltipTrigger>
@@ -165,12 +160,14 @@ function AdminPostsPage() {
           className="w-full border rounded px-3 py-2"
           placeholder="Tiêu đề"
           value={form.title}
+          required
           onChange={(e) => setField("title", e.target.value)}
         />
         <Input
           className="w-full border rounded px-3 py-2"
           placeholder="Tóm tắt (tuỳ chọn)"
           value={form.excerpt}
+          required
           onChange={(e) => setField("excerpt", e.target.value)}
         />
 
@@ -196,12 +193,14 @@ function AdminPostsPage() {
           className="w-full border rounded px-3 py-2"
           placeholder="Thời gian đọc"
           value={form.readTime}
+          required
           onChange={(e) => setField("readTime", e.target.value)}
         />
         <Input
           className="w-full border rounded px-3 py-2"
           placeholder="Tags (cách nhau bởi dấu phẩy)"
           value={form.tags.join(", ")}
+          required
           onChange={(e) =>
             setField(
               "tags",
