@@ -184,6 +184,7 @@ export const getPostBySlug = createServerFn({ method: "GET" })
         createdAt: posts.createdAt,
         updatedAt: posts.updatedAt,
         name: user.name,
+        image: user.image,
         email: user.email,
         likesCount: sql<number>`(SELECT count(*) FROM likes where likes.post_id = ${posts.id})`,
         isLiked: userId ? sql<boolean>`EXISTS (SELECT 1 FROM likes where likes.post_id = ${posts.id} AND likes.user_id = ${userId})` : sql<boolean>`false`,

@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "./ui/badge";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { JSONContent } from "@tiptap/core";
 
 export type Post = {
@@ -25,12 +25,14 @@ type PostCardProps = {
 };
 
 export function PostCard({ post, onOpen }: PostCardProps) {
+  const router = useRouter();
+
   return (
     <article className="border-b border-border">
       <Link
         to="/posts/$slug"
         params={{ slug: post.slug }}
-        className="w-full text-left py-7 px-0.5 bg-transparent text-foreground group cursor-pointer"
+        className="w-full text-left py-7 px-0.5 bg-transparent text-foreground group cursor-pointer block"
         aria-label={`Đọc bài ${post.title}`}
       >
         <div className="text-muted-foreground font-mono text-[11px] tracking-wide mb-2">
@@ -55,9 +57,22 @@ export function PostCard({ post, onOpen }: PostCardProps) {
           </div>
           <div
             className="grid gap-1.5 font-mono text-xs pl-4 border-l-2 border-border"
-            aria-label="Thay đổi trong mental model"
+            aria-label="Tác giả"
           >
-            <span className="text-muted-foreground">{post.name}</span>
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (post.authorId) {
+                  router.navigate({ to: "/users/$id", params: { id: post.authorId } });
+                }
+              }}
+              className="text-muted-foreground hover:text-primary transition-colors hover:underline cursor-pointer font-medium"
+            >
+              {post.name ?? "Tác giả"}
+            </span>
             <span className="text-primary font-medium">{post.email}</span>
           </div>
           <ArrowUpRight

@@ -9,6 +9,7 @@ import { TableOfContents } from "@tiptap/extension-table-of-contents";
 import type { TableOfContentsStorage } from "@tiptap/extension-table-of-contents";
 import { PostActions } from "~/components/PostActions";
 import { CommentsSection } from "~/components/comments/CommentsSection";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 // --- Tiptap styles ---
 import "~/components/tiptap-node/blockquote-node/blockquote-node.scss";
@@ -71,6 +72,29 @@ export function PostLayout({
         <p className="text-muted-foreground text-xl leading-relaxed">
           {post.excerpt}
         </p>
+
+        {post.authorId && (
+          <div className="flex items-center gap-3 pt-6 border-t border-border/50 mt-6">
+            <Link
+              to="/users/$id"
+              params={{ id: post.authorId }}
+              className="inline-flex items-center gap-2.5 group cursor-pointer"
+            >
+              <Avatar className="size-9 ring-1 ring-border group-hover:ring-primary/50 transition-all">
+                <AvatarImage src={(post as any).image ?? undefined} alt={post.name ?? "Tác giả"} />
+                <AvatarFallback className="text-xs font-bold">
+                  {post.name ? post.name.slice(0, 2).toUpperCase() : "TG"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1">
+                  {post.name ?? "Tác giả"}
+                </p>
+                <p className="text-xs text-muted-foreground">Xem hồ sơ tác giả →</p>
+              </div>
+            </Link>
+          </div>
+        )}
       </header>
 
       <button
