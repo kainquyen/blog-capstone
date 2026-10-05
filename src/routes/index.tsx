@@ -2,20 +2,22 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getDb } from "~/lib/db/client";
 import { posts, user } from "~/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, lt } from "drizzle-orm";
 import { PostCard, type Post } from "~/components/PostCard";
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { getTopics } from "~/server/posts";
-/**
- * TODO 13: getPublishedPosts — server function CÔNG KHAI, KHÔNG cần
- * authMiddleware (ai cũng xem được blog). Query: select posts, where
- * published = true, orderBy createdAt desc.
- */
-const getPublishedPosts = createServerFn({ method: "GET" }).handler(
-  async () => {
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
+
+const LIMIT = 10;
+
+const getPublishedPosts = createServerFn({ method: "GET" })
+  .validator((cursor?: number) => cursor)
+  .handler(async ({ data: cursor }) => {
     const db = getDb();
+    const cursorDate = cursor ? new Date(cursor) : undefined;
     const results = await db
       .select({
         id: posts.id,
@@ -35,40 +37,87 @@ const getPublishedPosts = createServerFn({ method: "GET" }).handler(
       })
       .from(posts)
       .leftJoin(user, eq(posts.authorId, user.id))
-      .where(eq(posts.published, true))
-      .orderBy(desc(posts.createdAt));
+      .where(cursorDate ? and(lt(posts.createdAt, cursorDate), eq(posts.published, true)) : eq(posts.published, true))
+      .orderBy(desc(posts.createdAt))
+      .limit(LIMIT + 1);
 
-    return results;
-  },
-);
+    let nextCursor: string | undefined = undefined;
+    if (results.length > LIMIT) {
+      const nextItem = results.pop(); // Xóa phần dư thứ 11
+      // Serialize Date thành ISO String để an toàn khi truyền qua mạng
+      nextCursor = nextItem?.createdAt
+        ? new Date(nextItem.createdAt).toISOString()
+        : undefined;
+    }
+
+    return {
+      results,
+      nextCursor,
+    };
+  });
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    const [posts, topics] = await Promise.all([getPublishedPosts(), getTopics()]);
-    return { posts, topics };
+    const [initialPosts, topics] = await Promise.all([
+      getPublishedPosts(),
+      getTopics(),
+    ]);
+    return { initialPosts, topics };
   },
   component: Home,
 });
 
 function Home() {
-  const { posts, topics } = Route.useLoaderData();
+  const { initialPosts, topics } = Route.useLoaderData();
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState("Tất cả");
 
+  const { ref, inView } = useInView();
+
+  // Dùng useInfiniteQuery kết hợp với initialData từ Loader
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["published-posts"],
+    queryFn: async ({ pageParam }) => {
+      return await getPublishedPosts({ data: pageParam });
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialData: {
+      pages: [initialPosts],
+      pageParams: [0],
+    },
+  });
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const allPosts = useMemo(() => {
+    return data?.pages.flatMap((page) => page.results) ?? [];
+  }, [data]);
+
+  // Lọc theo tag và search query
   const tags = ["Tất cả", ...topics.map((t) => t.name)];
   const filteredPosts = useMemo(
     () =>
-      posts.filter((post) => {
+      allPosts.filter((post: any) => {
         const matchedTag = activeTag === "Tất cả" || post.topic === activeTag;
         const searchable =
           `${post.title} ${post.excerpt} ${(post.tags || []).join(",")}`.toLocaleLowerCase();
         return matchedTag && searchable.includes(query.toLocaleLowerCase());
       }),
-    [activeTag, query, posts],
+    [activeTag, query, allPosts],
   );
 
   return (
-    <div className="min-h-screen overflow-x-hidden flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <main
         className="w-full max-w-[1184px] mx-auto px-4 md:px-7 flex-1"
         id="notes"
@@ -87,8 +136,9 @@ function Home() {
             một phần của lời giải thích.
           </p>
         </section>
+
         <div className="grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)] gap-8 md:gap-14">
-          <aside className="self-start md:sticky top-7 grid gap-2 py-4">
+          <aside className="self-start md:sticky md:top-7 grid gap-2 py-4">
             <div className="mb-2">
               <label className="relative flex items-center text-muted-foreground">
                 <Search
@@ -117,15 +167,14 @@ function Home() {
                       ? "bg-card text-foreground shadow-sm font-bold"
                       : "bg-transparent text-muted-foreground hover:bg-card/50 hover:text-foreground"
                   }`}
-                  onClick={() => {
-                    setActiveTag(tag)
-                  }}
+                  onClick={() => setActiveTag(tag)}
                 >
                   {tag}
                 </button>
               ))}
             </div>
           </aside>
+
           <section
             className="border-t border-border"
             aria-label="Danh sách bài viết"
@@ -144,9 +193,21 @@ function Home() {
                 </p>
               </div>
             )}
+
+            {/* Element sentinel cho IntersectionObserver để kích hoạt load more */}
+            <div ref={ref} className="py-8 text-center text-muted-foreground">
+              {isFetchingNextPage ? (
+                <p className="text-sm">Đang tải thêm bài viết...</p>
+              ) : hasNextPage ? (
+                <p className="text-sm text-muted-foreground/60">Cuộn để tải thêm</p>
+              ) : (
+                <p className="text-sm text-muted-foreground/50">Đã hiển thị tất cả bài viết.</p>
+              )}
+            </div>
           </section>
         </div>
       </main>
+
       <footer
         className="flex justify-between items-center max-w-[1240px] w-full mx-auto px-7 py-7 mt-12 border-t border-border text-muted-foreground font-mono text-xs"
         id="about"

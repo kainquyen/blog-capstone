@@ -4,6 +4,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { JSONContent } from "@tiptap/core";
 
 export type Post = {
+  published: boolean;
   id: string;
   createdAt?: string;
   topic: string;
