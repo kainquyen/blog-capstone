@@ -7,7 +7,7 @@ import { getDb } from "~/lib/db/client";
 import { posts, topics, bookmarks, user, likes } from "~/lib/db/schema";
 import { authMiddleware } from "~/server/auth-middleware";
 import { tiptapExtensions } from "~/lib/tiptap/extensions";
-import { slugify } from "~/lib/slugify";
+import { generateUniqueSlug, slugify } from "~/lib/slugify";
 import { notFound } from "@tanstack/react-router";
 
 // Shared Zod schema for post fields (reused by createPost & updatePost)
@@ -76,6 +76,9 @@ export const createPost = createServerFn({ method: "POST" })
     const db = getDb();
     const { title, excerpt, content, topic, readTime, tags } = data;
     const html = generateHTML(content as JSONContent, tiptapExtensions);
+    
+    const slug = await generateUniqueSlug(db, title);
+    
     const [post] = await db
       .insert(posts)
       .values({
@@ -86,7 +89,7 @@ export const createPost = createServerFn({ method: "POST" })
         topic,
         readTime,
         tags,
-        slug: slugify(title),
+        slug,
         authorId: context.session.user.id,
         published: false,
       })
